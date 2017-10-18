@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.app.DialogFragment;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -80,17 +81,16 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        if (id == R.id.nav_gps) {
+            // Create an instance of the GPS Input dialog
+            DialogFragment gpsDialog = new GPSLocationDialogFragment();
 
-        } else if (id == R.id.nav_slideshow) {
+            // Display the dialog to the user
+            gpsDialog.show(getFragmentManager(), "GPSdialog");
 
-        } else if (id == R.id.nav_manage) {
+        } else if (id == R.id.nav_flight_vars) {
 
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
+        } else if (id == R.id.nav_start) {
 
         }
 
