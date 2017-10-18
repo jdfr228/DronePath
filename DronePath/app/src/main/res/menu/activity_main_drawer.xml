@@ -7,7 +7,7 @@
             android:id="@+id/nav_gps"
             android:checkable="false"
             android:icon="@android:drawable/ic_menu_mylocation"
-            android:title="@string/gps_location" />
+            android:title="@string/gps_address" />
         <item
             android:id="@+id/nav_flight_vars"
             android:icon="@drawable/ic_menu_manage"

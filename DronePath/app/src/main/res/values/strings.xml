@@ -8,7 +8,7 @@
 
     <string name="communicate">Communicate</string>
 
-    <string name="gps_location">GPS Location</string>
+    <string name="gps_address">GPS Address</string>
     <string name="flight_vars">Flight Variables</string>
     <string name="start">Start Flight</string>
 </resources>
