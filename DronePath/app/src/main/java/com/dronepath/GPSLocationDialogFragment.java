@@ -39,6 +39,7 @@ public class GPSLocationDialogFragment extends DialogFragment {
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit Cancel
                         // Close the dialog without modifying any variables
+                        dialog.cancel();
                     }
                 });
 
