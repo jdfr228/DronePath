@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.SeekBar;
 
 /**
  * Created by Dylan on 10/19/2017.
@@ -15,21 +17,28 @@ import android.view.LayoutInflater;
 public class FlightVarsDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = getActivity().getLayoutInflater();
+        final View view = inflater.inflate(R.layout.flight_vars_dialog, null);
 
-        // Define the dialog TODO - Maybe add a slider for velocity and altitude?
-        builder.setView(inflater.inflate(R.layout.flight_vars_dialog, null))
+        // These reference the SeekBars defined in the flight_vars_dialog layout
+        final SeekBar velocitySeekBar = (SeekBar) view.findViewById(R.id.velocitySeekBar);
+        final SeekBar altitudeSeekBar = (SeekBar) view.findViewById(R.id.altitudeSeekBar);
+
+        // Define the dialog
+        builder.setView(view)
                 // "Setter methods" are chained together to modify the dialog's characteristics
                 .setMessage("Modify drone flight variables")   // Text in window
+
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit OK
-                        // TODO Read the actual velocity and altitude from the Dialog
-                        double velocity = 1.0;
-                        double altitude = 1.0;
-                        mListener.onComplete(velocity, altitude);
+                        double velocity = progressToDouble(velocitySeekBar.getProgress());
+                        double altitude = progressToDouble(altitudeSeekBar.getProgress());
+                        mListener.onComplete(velocity, altitude);   // Pass to Main Activity
                     }
                 })
+
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit Cancel
                         // Close the dialog without modifying any variables
@@ -37,8 +46,25 @@ public class FlightVarsDialogFragment extends DialogFragment {
                     }
                 });
 
+        // TODO Display velocity and altitude values to the user
+        /*velocitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int val = velocitySeekBar.getProgress();
+
+            }
+        });*/
+
         // Create the AlertDialog object and return it
         return builder.create();
+    }
+
+
+    // Helper function to convert the int progress to the proper double value (with a step of 0.1)
+    // NOTE - In order to allow for a step of 0.1, maxVelocity and maxAltitude need to be stored
+    //          as a value 10x the actual expected value
+    private double progressToDouble(int progress) {
+        return progress / 10.0;
     }
 
 
@@ -47,6 +73,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
     public interface OnCompleteListener {
         void onComplete(double velocity, double altitude);
     }
+
 
     // Make sure the Main Activity has implemented the Interface
     private OnCompleteListener mListener;

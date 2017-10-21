@@ -24,6 +24,9 @@ public class MainActivity extends AppCompatActivity
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity;
     public double altitude;
+    public double maxVelocity = 100.0;  // Stored at 10x the expected value unless we stop using
+                                        //      sliders to set velocity/altitude in the GUI
+    public double maxAltitude = 100.0;
     public double gpsAddress;
 
     // TODO - since the variables are encapsulated in MainActivity, setters may not be needed?
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity
     public void setAltitude(double newAltitude) {
         altitude = newAltitude;
     }
+
 
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
     public void onComplete(double velocity, double altitude) {

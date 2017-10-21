@@ -3,13 +3,25 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <EditText
-        android:id="@+id/velocity"
+    <SeekBar
+        android:id="@+id/velocitySeekBar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="4dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:hint="@string/velocity" />
+        android:layout_margin="16dp" />
+
+    <SeekBar
+        android:id="@+id/altitudeSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="16dp"/>
+
+    <!-- Placeholders for displaying values to user
+    <textView
+        android:id="@+id/velocityTextView"
+
+        />
+
+    <textView
+        android:id="@+id/altitudeTextView"
+        />                                          -->
 </LinearLayout>
