@@ -3,6 +3,7 @@ package com.dronepath;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -17,6 +18,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.app.DialogFragment;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.o3dr.android.client.ControlTower;
@@ -29,15 +32,20 @@ import java.util.ResourceBundle;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
-                    FlightVarsDialogFragment.OnCompleteListener {
+                    FlightVarsDialogFragment.OnCompleteListener,
+                    View.OnClickListener{
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
-    public double velocity;
-    public double altitude;
+    public double velocity, altitude;
     public double maxVelocity = 100.0;  // Stored at 10x the expected value unless we stop using
                                         //      sliders to set velocity/altitude in the GUI
     public double maxAltitude = 100.0;
     public double gpsAddress;
+
+    // Floating Action Buttons
+    private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab;
+    boolean isFabExpanded = false;
+    private Animation open_fab,close_fab;
 
     // TODO - since the variables are encapsulated in MainActivity, setters may not be needed?
     public void setVelocity(double newVelocity) {
@@ -64,14 +72,23 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        menu_fab = (FloatingActionButton) findViewById(R.id.menu_fab);
+        edit_fab = (FloatingActionButton) findViewById(R.id.edit_fab);
+        place_fab = (FloatingActionButton) findViewById(R.id.place_fab);
+        delete_fab = (FloatingActionButton) findViewById(R.id.delete_fab);
+        menu_fab.setOnClickListener(this);
+        edit_fab.setOnClickListener(this);
+        place_fab.setOnClickListener(this);
+        delete_fab.setOnClickListener(this);
+        open_fab = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.open_fab);
+        close_fab = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.close_fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -82,6 +99,16 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
     }
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        switch (id){
+            case R.id.menu_fab:
+                animateFabButtons();
+                break;
+        }
+    }
+
 
     @Override
     public void onBackPressed() {
@@ -142,5 +169,28 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    public void animateFabButtons(){
+        if (isFabExpanded){
+            isFabExpanded = false;
+            menu_fab.setImageResource(R.mipmap.ic_more_vert_white_24dp);
+            edit_fab.startAnimation(close_fab);
+            place_fab.startAnimation(close_fab);
+            delete_fab.startAnimation(close_fab);
+            edit_fab.setClickable(false);
+            place_fab.setClickable(false);
+            delete_fab.setClickable(false);
+        }
+        else{
+            isFabExpanded = true;
+            menu_fab.setImageResource(R.mipmap.ic_close_white_24dp);
+            edit_fab.startAnimation(open_fab);
+            place_fab.startAnimation(open_fab);
+            delete_fab.startAnimation(open_fab);
+            edit_fab.setClickable(true);
+            place_fab.setClickable(true);
+            delete_fab.setClickable(true);
+        }
     }
 }
