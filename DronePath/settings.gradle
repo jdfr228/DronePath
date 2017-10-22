@@ -1,1 +1,6 @@
 include ':app'
+include ':DroneKit'
+include ':Mavlink'
+
+project(':DroneKit').projectDir = new File('libs/DroneKit')
+project(':Mavlink').projectDir = new File('libs/Mavlink')

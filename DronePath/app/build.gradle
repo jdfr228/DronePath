@@ -34,4 +34,5 @@ dependencies {
     compile 'com.google.android.gms:play-services:11.0.4'
     compile 'com.google.android.gms:play-services-maps:11.0.4'
     compile 'com.google.android.gms:play-services-location:10.+'
+    compile project(':DroneKit')
 }
