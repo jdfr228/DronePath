@@ -283,7 +283,7 @@ public class ConnectionParameter implements Parcelable {
 
     /**
      */
-    private ConnectionParameter(@ConnectionType.Type int connectionType, Bundle paramsBundle, Uri tlogLoggingUri){
+    public ConnectionParameter(@ConnectionType.Type int connectionType, Bundle paramsBundle, Uri tlogLoggingUri){
         this(connectionType, paramsBundle, tlogLoggingUri, DEFAULT_EVENTS_DISPATCHING_PERIOD);
     }
 

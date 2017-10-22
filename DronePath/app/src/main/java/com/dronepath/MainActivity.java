@@ -29,8 +29,7 @@ import java.util.ResourceBundle;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
-                    FlightVarsDialogFragment.OnCompleteListener,
-                       TowerListener, DroneListener {
+                    FlightVarsDialogFragment.OnCompleteListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity;
@@ -47,12 +46,6 @@ public class MainActivity extends AppCompatActivity
     public void setAltitude(double newAltitude) {
         altitude = newAltitude;
     }
-
-    // Drone Kit Stuff
-    private ControlTower controlTower;
-    private Drone drone;
-    private int droneType = Type.TYPE_UNKNOWN;
-    private final Handler handler = new Handler();
 
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
     public void onComplete(double velocity, double altitude) {
@@ -88,10 +81,6 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        // Initialize the DroneKit service manager
-        this.controlTower = new ControlTower(getApplicationContext());
-        this.drone = new Drone();
     }
 
     @Override
@@ -153,49 +142,5 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        this.controlTower.connect(this);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if(this.drone.isConnected()) {
-            this.drone.disconnect();
-            // TODO (William) Update connected status here
-        }
-        this.controlTower.unregisterDrone(this.drone);
-        this.controlTower.disconnect();
-    }
-
-    @Override
-    public void onTowerConnected() {
-        // TODO (William) Questionable arguments...
-        this.controlTower.registerDrone(this.drone, this.handler);
-        this.drone.registerDroneListener(this);
-    }
-
-    @Override
-    public void onTowerDisconnected() {
-
-    }
-
-    @Override
-    public void onDroneEvent(String event, Bundle extras) {
-
-    }
-
-    @Override
-    public void onDroneConnectionFailed(ConnectionResult result) {
-
-    }
-
-    @Override
-    public void onDroneServiceInterrupted(String errorMsg) {
-
     }
 }
