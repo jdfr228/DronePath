@@ -277,7 +277,7 @@ public class ConnectionParameter implements Parcelable {
             eventsDispatchingPeriod);
     }
 
-    private ConnectionParameter(@ConnectionType.Type int connectionType, Bundle paramsBundle){
+    public ConnectionParameter(@ConnectionType.Type int connectionType, Bundle paramsBundle){
         this(connectionType, paramsBundle, null);
     }
 
@@ -287,7 +287,7 @@ public class ConnectionParameter implements Parcelable {
         this(connectionType, paramsBundle, tlogLoggingUri, DEFAULT_EVENTS_DISPATCHING_PERIOD);
     }
 
-    private ConnectionParameter(@ConnectionType.Type int connectionType, Bundle paramsBundle,
+    public ConnectionParameter(@ConnectionType.Type int connectionType, Bundle paramsBundle,
                                 Uri tlogLoggingUri, long eventsDispatchingPeriod){
         this.connectionType = connectionType;
         this.paramsBundle = paramsBundle;
