@@ -1,6 +1,7 @@
 package com.dronepath;
 
 import android.content.Intent;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.DrawableRes;
@@ -8,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -22,6 +24,9 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.Projection;
+import com.google.android.gms.maps.model.LatLng;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.interfaces.DroneListener;
@@ -44,8 +49,10 @@ public class MainActivity extends AppCompatActivity
 
     // Floating Action Buttons
     private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab;
-    boolean isFabExpanded = false;
+    boolean isFabExpanded, isMapDrawable = false;
     private Animation open_fab,close_fab;
+
+    private DroneMapFragment mapFragment;
 
     // TODO - since the variables are encapsulated in MainActivity, setters may not be needed?
     public void setVelocity(double newVelocity) {
@@ -66,8 +73,36 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        DroneMapFragment mapFragment = (DroneMapFragment) getSupportFragmentManager()
+        mapFragment = (DroneMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+        mapFragment.setOnDragListener(new DroneMapWrapper.OnDragListener() {
+            @Override
+            public void onDrag(MotionEvent motionEvent) {
+                if (!isMapDrawable || !isFabExpanded)
+                    return;
+
+                Log.i("ON_DRAG", "X:" + String.valueOf(motionEvent.getX()));
+                Log.i("ON_DRAG", "Y:" + String.valueOf(motionEvent.getY()));
+
+                float x = motionEvent.getX();
+                float y = motionEvent.getY();
+
+                int x_co = Integer.parseInt(String.valueOf(Math.round(x)));
+                int y_co = Integer.parseInt(String.valueOf(Math.round(y)));
+
+                Projection projection = mapFragment.getMap().getProjection();
+                Point x_y_points = new Point(x_co, y_co);
+                LatLng latLng = projection.fromScreenLocation(x_y_points);
+                double latitude = latLng.latitude;
+                double longitude = latLng.longitude;
+
+                Log.i("ON_DRAG", "lat:" + latitude);
+                Log.i("ON_DRAG", "long:" + longitude);
+
+                // Handle motion event:
+                mapFragment.addPoint(latLng);
+            }
+        });
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -105,6 +140,20 @@ public class MainActivity extends AppCompatActivity
         switch (id){
             case R.id.menu_fab:
                 animateFabButtons();
+                break;
+            case R.id.edit_fab:
+                isMapDrawable = !isMapDrawable;
+                if (isMapDrawable) {
+                    mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(false);
+                }
+                else {
+                    mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+                }
+
+                break;
+            case R.id.delete_fab:
+                if (mapFragment != null)
+                    mapFragment.clearPoints();
                 break;
         }
     }
@@ -174,6 +223,8 @@ public class MainActivity extends AppCompatActivity
     public void animateFabButtons(){
         if (isFabExpanded){
             isFabExpanded = false;
+            isMapDrawable = false;
+            mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
             menu_fab.setImageResource(R.mipmap.ic_more_vert_white_24dp);
             edit_fab.startAnimation(close_fab);
             place_fab.startAnimation(close_fab);

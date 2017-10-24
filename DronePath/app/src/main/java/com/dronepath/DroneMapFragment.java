@@ -7,6 +7,9 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -18,6 +21,10 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import java.util.ArrayList;
 
 
 /**
@@ -27,11 +34,14 @@ import com.google.android.gms.maps.model.LatLng;
 public class DroneMapFragment extends SupportMapFragment {
 
     private static final String TAG = "DroneMapFragment";
+    private View mOriginalView;
+    private DroneMapWrapper mDroneMapWrapper;
 
     private GoogleMap mMap;
     private GoogleApiClient mClient;
     private Location mLastLocation;
     private final int mDefaultZoom = 18;
+    private ArrayList<LatLng> latLngPoints = new ArrayList<LatLng>();
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -41,8 +51,12 @@ public class DroneMapFragment extends SupportMapFragment {
 
 
     @Override
-    public void onCreate(Bundle var1) {
-        super.onCreate(var1);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        mOriginalView = super.onCreateView(inflater, container, savedInstanceState);
+        mDroneMapWrapper = new DroneMapWrapper(getActivity());
+        mDroneMapWrapper.addView(mOriginalView);
+
+
         mClient = new GoogleApiClient.Builder(getActivity()).addApi(LocationServices.API)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                     @Override
@@ -74,6 +88,7 @@ public class DroneMapFragment extends SupportMapFragment {
                 updateUI();
             }
         });
+        return mDroneMapWrapper;
     }
 
     @Override
@@ -112,9 +127,6 @@ public class DroneMapFragment extends SupportMapFragment {
             return;
 
         LatLng currLocation = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-
-        mMap.clear();
-
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(currLocation, mDefaultZoom);
         mMap.animateCamera(update);
     }
@@ -138,5 +150,30 @@ public class DroneMapFragment extends SupportMapFragment {
                    });
        }
        catch (SecurityException e){Log.i(TAG, "catch getLocation");}
+    }
+
+    @Override
+    public View getView() {
+        return mOriginalView;
+    }
+
+    public GoogleMap getMap(){
+        return mMap;
+    }
+
+    public void addPoint (LatLng point){
+        latLngPoints.add(point);
+        //mMap.clear();
+        mMap.addPolyline(new PolylineOptions().clickable(false).addAll(latLngPoints));
+
+    }
+
+    public void clearPoints(){
+        latLngPoints.clear();
+        mMap.clear();
+    }
+
+    public void setOnDragListener(DroneMapWrapper.OnDragListener onDragListener) {
+        mDroneMapWrapper.setOnDragListener(onDragListener);
     }
 }
