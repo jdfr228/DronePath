@@ -42,9 +42,8 @@ public class MainActivity extends AppCompatActivity
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
-    public double maxVelocity = 100.0;  // Stored at 10x the expected value unless we stop using
-                                        //      sliders to set velocity/altitude in the GUI
-    public double maxAltitude = 100.0;
+    public double maxVelocity = 10.0;
+    public double maxAltitude = 10.0;
     public double gpsAddress;
 
     // Floating Action Buttons
@@ -134,6 +133,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
     }
+
     @Override
     public void onClick(View v) {
         int id = v.getId();
@@ -157,7 +157,6 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
     }
-
 
     @Override
     public void onBackPressed() {
@@ -201,7 +200,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_gps) {
-            // Create an instance of the GPS Input dialog
+            // Create an instance of the GPS Input Dialog
             DialogFragment gpsDialog = new GPSLocationDialogFragment();
 
             // Display the dialog to the user
@@ -209,11 +208,21 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_flight_vars) {
             DialogFragment flightVarsDialog = new FlightVarsDialogFragment();
+
+            // Pass arguments to the new Dialog
+            Bundle args = new Bundle();
+            args.putDouble("currVelocity", velocity);
+            args.putDouble("maxVelocity", maxVelocity);
+            args.putDouble("currAltitude", altitude);
+            args.putDouble("maxAltitude", maxAltitude);
+            flightVarsDialog.setArguments(args);
+
             flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
 
         } else if (id == R.id.nav_start) {
             // TODO Handle starting the drone flight
         }
+        // TODO Add drone connection button to nav_drawer
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);

@@ -9,6 +9,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.SeekBar;
+import android.widget.TextView;
+
+import java.util.Locale;
 
 /**
  * Created by Dylan on 10/19/2017.
@@ -17,7 +20,6 @@ import android.widget.SeekBar;
 public class FlightVarsDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = getActivity().getLayoutInflater();
         final View view = inflater.inflate(R.layout.flight_vars_dialog, null);
@@ -26,6 +28,20 @@ public class FlightVarsDialogFragment extends DialogFragment {
         final SeekBar velocitySeekBar = (SeekBar) view.findViewById(R.id.velocitySeekBar);
         final SeekBar altitudeSeekBar = (SeekBar) view.findViewById(R.id.altitudeSeekBar);
 
+        // References to the text to be shown above the SeekBars
+        final TextView velocityText = (TextView) view.findViewById(R.id.velocityTextView);
+        final TextView altitudeText = (TextView) view.findViewById(R.id.altitudeTextView);
+
+        // Get passed arguments
+        double velocity = this.getArguments().getDouble("currVelocity");
+        double altitude = this.getArguments().getDouble("currAltitude");
+        final double maxVelocity = this.getArguments().getDouble("maxVelocity");
+        final double maxAltitude = this.getArguments().getDouble("maxAltitude");
+
+        // Set the SeekBars to the correct starting values
+        velocitySeekBar.setProgress((int) Math.round(velocity / maxVelocity * 100));
+        altitudeSeekBar.setProgress((int) Math.round(altitude / maxAltitude * 100));
+
         // Define the dialog
         builder.setView(view)
                 // "Setter methods" are chained together to modify the dialog's characteristics
@@ -33,9 +49,10 @@ public class FlightVarsDialogFragment extends DialogFragment {
 
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit OK
-                        double velocity = progressToDouble(velocitySeekBar.getProgress());
-                        double altitude = progressToDouble(altitudeSeekBar.getProgress());
-                        mListener.onComplete(velocity, altitude);   // Pass to Main Activity
+                        //double newVelocity = progressToDouble(velocitySeekBar.getProgress());
+                        double newVelocity = (velocitySeekBar.getProgress() / 100.0) * maxVelocity;
+                        double newAltitude = (altitudeSeekBar.getProgress() / 100.0) * maxAltitude;
+                        mListener.onComplete(newVelocity, newAltitude);   // Pass to Main Activity
                     }
                 })
 
@@ -46,25 +63,50 @@ public class FlightVarsDialogFragment extends DialogFragment {
                     }
                 });
 
-        // TODO Display velocity and altitude values to the user
-        /*velocitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        // Display velocity and altitude values to the user
+        velocitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {
+                velocityText.setVisibility(View.VISIBLE);
+            }
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {
+                velocityText.setVisibility(View.INVISIBLE);
+            }
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int val = velocitySeekBar.getProgress();
+                // Get the current velocity value
+                double velocityVal = (velocitySeekBar.getProgress() / 100.0) * maxVelocity;
 
+                // Modify the TextView values
+                velocityText.setText(String.format(Locale.ENGLISH, "%.1f", velocityVal));
+
+                // Find where the TextView needs to be displayed
+                //TODO- that getX() shouldn't be needed but makes it closer to centered...
+                float xPosition = velocitySeekBar.getX() + velocitySeekBar.getThumb().getBounds().exactCenterX();
+                velocityText.setX(xPosition);
+                velocityText.setY(velocitySeekBar.getY() - 64);
             }
-        });*/
+        });
+
+        altitudeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {
+                altitudeText.setVisibility(View.VISIBLE);
+            }
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {
+                altitudeText.setVisibility(View.INVISIBLE);
+            }
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                double altitudeVal = (altitudeSeekBar.getProgress() / 100.0) * maxAltitude;
+                altitudeText.setText(String.format(Locale.ENGLISH, "%.1f", altitudeVal));
+
+                float xPosition = altitudeSeekBar.getX() + altitudeSeekBar.getThumb().getBounds().exactCenterX();
+                altitudeText.setX(xPosition);
+                altitudeText.setY(altitudeSeekBar.getY() - 64);
+            }
+        });
 
         // Create the AlertDialog object and return it
         return builder.create();
-    }
-
-
-    // Helper function to convert the int progress to the proper double value (with a step of 0.1)
-    // NOTE - In order to allow for a step of 0.1, maxVelocity and maxAltitude need to be stored
-    //          as a value 10x the actual expected value
-    private double progressToDouble(int progress) {
-        return progress / 10.0;
     }
 
 

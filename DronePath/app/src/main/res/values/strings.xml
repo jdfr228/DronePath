@@ -13,4 +13,5 @@
     <string name="start">Start Flight</string>
 
     <string name="velocity">Velocity</string>
+    <string name="altitude">Altitude</string>
 </resources>
