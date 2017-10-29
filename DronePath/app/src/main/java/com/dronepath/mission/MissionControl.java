@@ -7,7 +7,8 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 
-import com.dronepath.DronePath;
+//import com.dronepath.DronePath; - This doesn't seem to exist? Someone correct me if I'm wrong -Dylan
+
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.o3dr.android.client.Drone;
