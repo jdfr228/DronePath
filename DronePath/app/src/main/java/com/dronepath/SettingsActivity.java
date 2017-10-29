@@ -4,17 +4,34 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dronepath.mission.MissionControl;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.TowerListener;
+import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
+import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
+import com.o3dr.services.android.lib.drone.property.Altitude;
+import com.o3dr.services.android.lib.drone.property.Gps;
+import com.o3dr.services.android.lib.drone.property.Home;
+import com.o3dr.services.android.lib.drone.property.Speed;
+import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.Type;
+import com.o3dr.services.android.lib.drone.property.VehicleMode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity implements TowerListener, DroneListener {
 
@@ -23,6 +40,7 @@ public class SettingsActivity extends AppCompatActivity implements TowerListener
     private Drone drone;
     private int droneType = Type.TYPE_UNKNOWN;
     private final Handler handler = new Handler();
+    Spinner modeSelector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,12 +110,16 @@ public class SettingsActivity extends AppCompatActivity implements TowerListener
             this.drone.disconnect();
         } else {
             Bundle extraParams = new Bundle();
-            extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 5760); // Set default port to 14550
+            extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
 
             ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
                                                                            extraParams,
                                                                            null);
             this.drone.connect(connectionParams);
+
+            MissionControl missionControl = new MissionControl(this, drone);
+            missionControl.addWaypoints(new ArrayList<LatLong>());
+            missionControl.sendMissionToAPM();
         }
     }
 
@@ -112,5 +134,10 @@ public class SettingsActivity extends AppCompatActivity implements TowerListener
         } else {
             connectButton.setText("Connect");
         }
+    }
+
+    public void onFlightModeSelected(View view) {
+        VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
+        // this.drone.changeVehicleMode(vehicleMode);
     }
 }
