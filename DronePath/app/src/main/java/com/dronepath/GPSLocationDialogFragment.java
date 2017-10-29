@@ -5,7 +5,10 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.app.DialogFragment;
 import android.app.Dialog;
+import android.preference.EditTextPreference;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 
 /**
  * Created by Dylan on 10/17/2017.
@@ -21,6 +24,9 @@ public class GPSLocationDialogFragment extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         // The layout inflater converts an XML layout into view objects
         LayoutInflater inflater = getActivity().getLayoutInflater();
+        final View view = inflater.inflate(R.layout.gps_dialog, null);
+        double longitude = 0;
+        double latitude = 0;
 
         // Define the dialog
         builder.setView(inflater.inflate(R.layout.gps_dialog, null))
@@ -34,6 +40,8 @@ public class GPSLocationDialogFragment extends DialogFragment {
                             3) Store GPS address as a global and call a GMaps routine to display
                                 the updated info?
                          */
+                        final EditText longitude = (EditText) view.findViewById(R.id.longitude);
+                        final EditText latitude = (EditText) view.findViewById(R.id.latitude);
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

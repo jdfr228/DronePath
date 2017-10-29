@@ -4,12 +4,21 @@
     android:layout_height="match_parent">
 
     <EditText
-        android:id="@+id/gps"
+        android:id="@+id/longitude"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
-        android:hint="@string/gps_address" />
+        android:hint="@string/longitude" />
+    <EditText
+        android:id="@+id/latitude"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:hint="@string/latitude" />
 </LinearLayout>

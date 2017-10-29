@@ -9,6 +9,8 @@
     <string name="communicate">Communicate</string>
 
     <string name="gps_address">GPS Address</string>
+    <string name="longitude">longitude</string>
+    <string name="latitude">latitude</string>
     <string name="flight_vars">Flight Variables</string>
     <string name="start">Start Flight</string>
 
