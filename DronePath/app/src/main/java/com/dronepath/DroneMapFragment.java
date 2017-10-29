@@ -21,10 +21,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.util.MathUtils;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -42,6 +47,8 @@ public class DroneMapFragment extends SupportMapFragment {
     private Location mLastLocation;
     private final int mDefaultZoom = 18;
     private ArrayList<LatLng> latLngPoints = new ArrayList<LatLng>();
+    private Polyline polypath;
+    private boolean spline_complete;
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -55,7 +62,7 @@ public class DroneMapFragment extends SupportMapFragment {
         mOriginalView = super.onCreateView(inflater, container, savedInstanceState);
         mDroneMapWrapper = new DroneMapWrapper(getActivity());
         mDroneMapWrapper.addView(mOriginalView);
-
+        spline_complete = false;
 
         mClient = new GoogleApiClient.Builder(getActivity()).addApi(LocationServices.API)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -98,6 +105,7 @@ public class DroneMapFragment extends SupportMapFragment {
     }
 
     @Override
+    // If rotating phone it stops and restarts. Need to save all data and reapply on start.
     public void onStop() {
         super.onStop();
         mClient.disconnect();
@@ -163,14 +171,64 @@ public class DroneMapFragment extends SupportMapFragment {
 
     public void addPoint (LatLng point){
         latLngPoints.add(point);
-        //mMap.clear();
-        mMap.addPolyline(new PolylineOptions().clickable(false).addAll(latLngPoints));
+        if (polypath == null) {
+            PolylineOptions flightPathOptions = new PolylineOptions();
+            flightPathOptions.clickable(false);
+            polypath = getMap().addPolyline(flightPathOptions);
+        }
+        List<LatLng> oldpolypath = polypath.getPoints();
+        oldpolypath.add(point);
+        polypath.setPoints(oldpolypath);
 
     }
 
+    public List<LatLong> convertToLatLong(List<LatLng> points){
+        List<LatLong> new_points = new ArrayList<LatLong>();
+        for (LatLng point : points){
+            new_points.add(new LatLong(point.latitude, point.longitude));
+        }
+
+        return new_points;
+    }
+
+    public List<LatLng> convertToLatLng(List<LatLong> points){
+        List<LatLng> new_points = new ArrayList<LatLng>();
+        for (LatLong point : points){
+            new_points.add(new LatLng(point.getLatitude(), point.getLongitude()));
+        }
+
+        return new_points;
+    }
+
+    public void convertToSpline(){
+        if (isSplineComplete())
+            return;
+        List<LatLong> new_points = MathUtils.SplinePath.process(convertToLatLong(polypath.getPoints()));
+        new_points = MathUtils.simplify(new_points, .0001);
+        //List<LatLong> new_points = convertToLatLong(polypath.getPoints());
+        //new_points = MathUtils.SplinePath.process(new_points);
+        polypath.setPoints(convertToLatLng(new_points));
+        for (LatLng point : polypath.getPoints()){
+            Marker m = getMap().addMarker(new MarkerOptions().position(point));
+            m.setDraggable(false);
+            m.setTitle("Point: " + point.latitude + "," + point.longitude);
+        }
+        spline_complete = true;
+    }
+
+    public boolean isSplineComplete(){
+        return spline_complete;
+    }
+
+    public List<LatLong> getLatLongWaypoints(){
+        return convertToLatLong(polypath.getPoints());
+    }
+
     public void clearPoints(){
-        latLngPoints.clear();
-        mMap.clear();
+        polypath.remove();
+        polypath = null;
+        getMap().clear();
+        spline_complete = false;
     }
 
     public void setOnDragListener(DroneMapWrapper.OnDragListener onDragListener) {

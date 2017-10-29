@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity
         mapFragment.setOnDragListener(new DroneMapWrapper.OnDragListener() {
             @Override
             public void onDrag(MotionEvent motionEvent) {
-                if (!isMapDrawable || !isFabExpanded)
+                if (!isMapDrawable || !isFabExpanded || mapFragment.isSplineComplete())
                     return;
 
                 Log.i("ON_DRAG", "X:" + String.valueOf(motionEvent.getX()));
@@ -150,6 +150,11 @@ public class MainActivity extends AppCompatActivity
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
                 }
 
+                break;
+            case R.id.place_fab:
+                mapFragment.convertToSpline();
+                isMapDrawable = false;
+                mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
                 break;
             case R.id.delete_fab:
                 if (mapFragment != null)
