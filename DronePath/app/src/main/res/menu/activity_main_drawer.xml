@@ -2,7 +2,7 @@
 <menu xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
+    <group>
         <item
             android:id="@+id/nav_gps"
             android:checkable="false"
@@ -12,6 +12,10 @@
             android:id="@+id/nav_flight_vars"
             android:icon="@drawable/ic_menu_manage"
             android:title="@string/flight_vars" />
+        <item
+            android:id="@+id/nav_connect"
+            android:icon="@drawable/quantum_ic_bigtop_updates_white_24"
+            android:title="@string/connect" />
     </group>
     <item android:title="@string/communicate">
         <menu>

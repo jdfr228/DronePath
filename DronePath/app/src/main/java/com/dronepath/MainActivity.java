@@ -224,10 +224,12 @@ public class MainActivity extends AppCompatActivity
 
             flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
 
+        } else if (id == R.id.nav_connect) {
+            // TODO Handle drone connection
+
         } else if (id == R.id.nav_start) {
             // TODO Handle starting the drone flight
         }
-        // TODO Add drone connection button to nav_drawer
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);

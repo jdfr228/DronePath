@@ -83,7 +83,8 @@ public class FlightVarsDialogFragment extends DialogFragment {
                 //TODO- that getX() shouldn't be needed but makes it closer to centered...
                 float xPosition = velocitySeekBar.getX() + velocitySeekBar.getThumb().getBounds().exactCenterX();
                 velocityText.setX(xPosition);
-                velocityText.setY(velocitySeekBar.getY() - 64);
+                velocityText.setY(velocitySeekBar.getY() - 128);    // Offset above the user's thumb
+                    // TODO- make the vertical offset a percentage of the screen instead of hard-coded
             }
         });
 
@@ -101,7 +102,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
 
                 float xPosition = altitudeSeekBar.getX() + altitudeSeekBar.getThumb().getBounds().exactCenterX();
                 altitudeText.setX(xPosition);
-                altitudeText.setY(altitudeSeekBar.getY() - 64);
+                altitudeText.setY(altitudeSeekBar.getY() - 128);
             }
         });
 
