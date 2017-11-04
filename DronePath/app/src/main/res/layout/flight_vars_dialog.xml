@@ -37,7 +37,8 @@
         android:layout_height="wrap_content"
         android:background="@drawable/background"
         android:textColor="@android:color/white"
-        android:textSize="8pt" />
+        android:textSize="8pt"
+        android:freezesText="true" />
 
     <TextView
         android:id="@+id/altitudeTextView"
@@ -45,5 +46,6 @@
         android:layout_height="wrap_content"
         android:background="@drawable/background"
         android:textColor="@android:color/white"
-        android:textSize="8pt" />
+        android:textSize="8pt"
+        android:freezesText="true" />
 </LinearLayout>
