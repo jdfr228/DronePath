@@ -36,7 +36,7 @@ import java.util.List;
  * Created by Edwin on 10/21/2017.
  */
 
-public class DroneMapFragment extends SupportMapFragment {
+public class DroneMapFragment extends SupportMapFragment implements GoogleMap.OnMarkerDragListener,OnMapReadyCallback{
 
     private static final String TAG = "DroneMapFragment";
     private View mOriginalView;
@@ -48,6 +48,7 @@ public class DroneMapFragment extends SupportMapFragment {
     private final int mDefaultZoom = 18;
     private ArrayList<LatLng> latLngPoints = new ArrayList<LatLng>();
     private Polyline polypath;
+    private ArrayList<Marker> markerArray = new ArrayList<Marker>();
     private boolean spline_complete;
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
@@ -78,24 +79,25 @@ public class DroneMapFragment extends SupportMapFragment {
                 })
                 .build();
 
-        getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(GoogleMap googleMap) {
-                mMap = googleMap;
-                mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
-                if (hasLocationPermission()) {
-                    mMap.setMyLocationEnabled(true);
-                }
-                else {
-                    requestPermissions(LOCATION_PERMISSIONS, REQUEST_LOCATION_PERMISSIONS);
-                    if (hasLocationPermission())
-                        mMap.setMyLocationEnabled(true);
-                }
-
-                updateUI();
-            }
-        });
+        getMapAsync(this);
         return mDroneMapWrapper;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        if (hasLocationPermission()) {
+            mMap.setMyLocationEnabled(true);
+        }
+        else {
+            requestPermissions(LOCATION_PERMISSIONS, REQUEST_LOCATION_PERMISSIONS);
+            if (hasLocationPermission())
+                mMap.setMyLocationEnabled(true);
+        }
+        mMap.setOnMarkerDragListener(this);
+
+        updateUI();
     }
 
     @Override
@@ -201,7 +203,7 @@ public class DroneMapFragment extends SupportMapFragment {
     }
 
     public void convertToSpline(){
-        if (isSplineComplete())
+        if (isSplineComplete() || polypath == null)
             return;
         List<LatLong> new_points = MathUtils.SplinePath.process(convertToLatLong(polypath.getPoints()));
         new_points = MathUtils.simplify(new_points, .0001);
@@ -210,8 +212,9 @@ public class DroneMapFragment extends SupportMapFragment {
         polypath.setPoints(convertToLatLng(new_points));
         for (LatLng point : polypath.getPoints()){
             Marker m = getMap().addMarker(new MarkerOptions().position(point));
-            m.setDraggable(false);
+            m.setDraggable(true);
             m.setTitle("Point: " + point.latitude + "," + point.longitude);
+            markerArray.add(m);
         }
         spline_complete = true;
     }
@@ -225,13 +228,35 @@ public class DroneMapFragment extends SupportMapFragment {
     }
 
     public void clearPoints(){
+        markerArray.clear();
         polypath.remove();
         polypath = null;
         getMap().clear();
         spline_complete = false;
     }
 
+
     public void setOnDragListener(DroneMapWrapper.OnDragListener onDragListener) {
         mDroneMapWrapper.setOnDragListener(onDragListener);
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+        getMap().getUiSettings().setScrollGesturesEnabled(false);
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+        ArrayList<LatLng> points = new ArrayList<>();
+        for (Marker m: markerArray){
+            m.setTitle("Point: " + m.getPosition().latitude + "," + m.getPosition().longitude);
+            points.add(m.getPosition());
+        }
+        polypath.setPoints(points);
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+        getMap().getUiSettings().setScrollGesturesEnabled(true);
     }
 }
