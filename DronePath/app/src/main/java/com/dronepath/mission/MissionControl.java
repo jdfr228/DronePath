@@ -1,5 +1,6 @@
 package com.dronepath.mission;
 
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -43,20 +44,18 @@ public class MissionControl {
 
     // Private member variables
     private final Drone drone;
-    private final AppCompatActivity app;
     private final Context context;
     private final LocalBroadcastManager lbm;
     private final List<MissionItem> missionItems = new ArrayList<MissionItem>();
 
     private Mission currentMission;
 
-    public MissionControl(AppCompatActivity app, Drone drone) {
+    public MissionControl(Context context, Drone drone) {
         // TODO Not sure if this works...
         this.drone = drone;
-        this.app = app;
+        this.context = context;
 
-        this.context = app.getApplicationContext();
-        lbm = LocalBroadcastManager.getInstance(context);
+        lbm = LocalBroadcastManager.getInstance(this.context);
     }
 
     // Adds take off, waypoints, and RTL to a mission

@@ -117,7 +117,7 @@ public class SettingsActivity extends AppCompatActivity implements TowerListener
                                                                            null);
             this.drone.connect(connectionParams);
 
-            MissionControl missionControl = new MissionControl(this, drone);
+            MissionControl missionControl = new MissionControl(this.getApplicationContext(), drone);
             missionControl.addWaypoints(new ArrayList<LatLong>());
             missionControl.sendMissionToAPM();
         }
