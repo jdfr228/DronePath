@@ -48,6 +48,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
         velocitySeekBar.setProgress((int) Math.round(velocity / maxVelocity * 100));
         altitudeSeekBar.setProgress((int) Math.round(altitude / maxAltitude * 100));
 
+
         // Define the dialog
         builder.setView(view)
                 // "Setter methods" are chained together to modify the dialog's characteristics
@@ -58,7 +59,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
                         //double newVelocity = progressToDouble(velocitySeekBar.getProgress());
                         double newVelocity = (velocitySeekBar.getProgress() / 100.0) * maxVelocity;
                         double newAltitude = (altitudeSeekBar.getProgress() / 100.0) * maxAltitude;
-                        mListener.onComplete(newVelocity, newAltitude);   // Pass to Main Activity
+                        mListener.onFlightVarsDialogComplete(newVelocity, newAltitude);   // Pass to Main Activity
                     }
                 })
 
@@ -68,6 +69,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
                         dialog.cancel();
                     }
                 });
+
 
         // Display velocity and altitude values to the user
         velocitySeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -122,6 +124,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
             }
         });
 
+
         // Create the AlertDialog object and return it
         return builder.create();
     }
@@ -130,7 +133,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
     // An Interface allows the Dialog to communicate with the Main Activity
     // The Main Activity is where the onComplete function is actually implemented
     public interface OnCompleteListener {
-        void onComplete(double velocity, double altitude);
+        void onFlightVarsDialogComplete(double velocity, double altitude);
     }
 
     // Make sure the Main Activity has implemented the Interface
