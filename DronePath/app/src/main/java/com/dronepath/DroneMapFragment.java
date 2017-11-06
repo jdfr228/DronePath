@@ -224,7 +224,11 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     }
 
     public List<LatLong> getLatLongWaypoints(){
-        return convertToLatLong(polypath.getPoints());
+        if (polypath == null) {
+            return null;
+        } else {
+            return convertToLatLong(polypath.getPoints());
+        }
     }
 
     public void clearPoints(){

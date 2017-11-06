@@ -1,11 +1,13 @@
 package com.dronepath;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.app.DialogFragment;
 import android.app.Dialog;
 import android.preference.EditTextPreference;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -17,33 +19,44 @@ import android.widget.EditText;
  */
 
 public class GPSLocationDialogFragment extends DialogFragment {
-
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         // The Builder class provides a wrapper for easily modifying a Dialog (popup menu)
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
         // The layout inflater converts an XML layout into view objects
         LayoutInflater inflater = getActivity().getLayoutInflater();
         final View view = inflater.inflate(R.layout.gps_dialog, null);
-        double longitude = 0;
-        double latitude = 0;
+
+        final EditText latitudeText = (EditText) view.findViewById(R.id.latitude);
+        final EditText longitudeText = (EditText) view.findViewById(R.id.longitude);
+
+        // Load saved inputs
+        latitudeText.setText(this.getArguments().getString("savedLatitude"));
+        longitudeText.setText(this.getArguments().getString("savedLongitude"));
 
         // Define the dialog
-        builder.setView(inflater.inflate(R.layout.gps_dialog, null))
+        builder.setView(view)
                 // "Setter methods" are chained together to modify the dialog's characteristics
                 .setMessage("Manually input a GPS address")   // Text in window
+
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit OK
-                        /* TODO 3 possible actions
-                            1) Pass GPS address to a sanity checker, then to the Google Maps class
-                            2) Pass straight to GMaps class which will perform its own sanity checks
-                            3) Store GPS address as a global and call a GMaps routine to display
-                                the updated info?
-                         */
-                        final EditText longitude = (EditText) view.findViewById(R.id.longitude);
-                        final EditText latitude = (EditText) view.findViewById(R.id.latitude);
+                        // Get user-input text
+                        String latEntry = latitudeText.getText().toString();
+                        String longEntry = longitudeText.getText().toString();
+
+                        // Check for blank input in either EditText
+                        if (!"".equals(latEntry) && !"".equals(longEntry)) {
+                            double latitude = Double.parseDouble(latitudeText.getText().toString());
+                            double longitude = Double.parseDouble(longitudeText.getText().toString());
+
+                            // Pass to MainActivity to handle Map integration
+                            mListener.onGPSLocationDialogComplete(latitude, longitude);
+                        }
                     }
                 })
+
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit Cancel
                         // Close the dialog without modifying any variables
@@ -53,5 +66,27 @@ public class GPSLocationDialogFragment extends DialogFragment {
 
         // Create the AlertDialog object and return it
         return builder.create();
+    }
+
+    // An Interface allows the Dialog to communicate with the Main Activity
+    // The Main Activity is where the onComplete function is actually implemented
+    public interface OnCompleteListener {
+        void onGPSLocationDialogComplete(double latitude, double longitude);
+    }
+
+    // Make sure the Main Activity has implemented the Interface
+    private OnCompleteListener mListener;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        try {
+            this.mListener = (OnCompleteListener)context;
+        }
+        catch (final ClassCastException e) {
+            throw new ClassCastException(context.toString() + " has not implemented " +
+                    "FlightVarsDialogFragment's Interface");
+        }
     }
 }

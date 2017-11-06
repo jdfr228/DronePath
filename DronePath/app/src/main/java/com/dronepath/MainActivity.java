@@ -31,20 +31,24 @@ import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.TowerListener;
+import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.drone.property.Type;
 
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
                     FlightVarsDialogFragment.OnCompleteListener,
+                    GPSLocationDialogFragment.OnCompleteListener,
                     View.OnClickListener{
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
     public double maxVelocity = 10.0;
     public double maxAltitude = 10.0;
-    public double gpsAddress;
+    public String savedLatitude = "";
+    public String savedLongitude = "";
 
     // Floating Action Buttons
     private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab;
@@ -62,9 +66,31 @@ public class MainActivity extends AppCompatActivity
     }
 
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
-    public void onComplete(double velocity, double altitude) {
+    public void onFlightVarsDialogComplete(double velocity, double altitude) {
         setVelocity(velocity);
         setAltitude(altitude);
+    }
+
+    // GPSLocationDialogFragment.OnCompleteListener implementation (add GPS waypoint)
+    public void onGPSLocationDialogComplete(double latitude, double longitude) {
+        mapFragment = (DroneMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        List<LatLong> points = mapFragment.getLatLongWaypoints();
+
+        if (points == null || points.size() == 0) {
+            // TODO- Simply move the map if no points have been drawn
+
+        } else {
+            // Add a waypoint on the map
+            // TODO- Ask Edwin if the projection stuff is necessary
+            LatLng latLng = new LatLng(latitude, longitude);
+            mapFragment.addPoint(latLng);
+
+            // TODO- fix waypoint graphic rendering (it seems like they're connected but the marker graphic doesn't appear)
+        }
+
+        // Save entered Latitude and Longitude for the next time the Dialog opens
+        savedLatitude = Double.toString(latitude);
+        savedLongitude = Double.toString(longitude);
     }
 
     @Override
@@ -204,31 +230,42 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_gps) {
-            // Create an instance of the GPS Input Dialog
-            DialogFragment gpsDialog = new GPSLocationDialogFragment();
+        switch(id) {
+            case R.id.nav_gps:
+                // Create an instance of the GPS Input Dialog
+                GPSLocationDialogFragment gpsDialog = new GPSLocationDialogFragment();
 
-            // Display the dialog to the user
-            gpsDialog.show(getFragmentManager(), "GPSDialog");
+                // Pass arguments
+                Bundle GPSargs = new Bundle();
+                GPSargs.putString("savedLatitude", savedLatitude);
+                GPSargs.putString("savedLongitude", savedLongitude);
+                gpsDialog.setArguments(GPSargs);
 
-        } else if (id == R.id.nav_flight_vars) {
-            DialogFragment flightVarsDialog = new FlightVarsDialogFragment();
+                // Display the dialog to the user
+                gpsDialog.show(getFragmentManager(), "GPSDialog");
+                break;
 
-            // Pass arguments to the new Dialog
-            Bundle args = new Bundle();
-            args.putDouble("currVelocity", velocity);
-            args.putDouble("maxVelocity", maxVelocity);
-            args.putDouble("currAltitude", altitude);
-            args.putDouble("maxAltitude", maxAltitude);
-            flightVarsDialog.setArguments(args);
+            case R.id.nav_flight_vars:
+                FlightVarsDialogFragment flightVarsDialog = new FlightVarsDialogFragment();
 
-            flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
+                // Pass arguments to the new Dialog
+                Bundle FlightVarArgs = new Bundle();
+                FlightVarArgs.putDouble("currVelocity", velocity);
+                FlightVarArgs.putDouble("maxVelocity", maxVelocity);
+                FlightVarArgs.putDouble("currAltitude", altitude);
+                FlightVarArgs.putDouble("maxAltitude", maxAltitude);
+                flightVarsDialog.setArguments(FlightVarArgs);
 
-        } else if (id == R.id.nav_connect) {
-            // TODO Handle drone connection
+                flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
+                break;
 
-        } else if (id == R.id.nav_start) {
-            // TODO Handle starting the drone flight
+            case R.id.nav_connect:
+                // TODO Handle drone connection
+                break;
+
+            case R.id.nav_start:
+                // TODO Handle starting the drone flight
+                break;
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
