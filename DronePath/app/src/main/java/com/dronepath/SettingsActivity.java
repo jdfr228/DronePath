@@ -14,6 +14,8 @@ import android.widget.Toast;
 import com.dronepath.mission.MissionControl;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
+import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
@@ -29,7 +31,9 @@ import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.Type;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
+import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -117,9 +121,24 @@ public class SettingsActivity extends AppCompatActivity implements TowerListener
                                                                            null);
             this.drone.connect(connectionParams);
 
+            ArrayList<LatLong> waypoints = new ArrayList<LatLong>();
+            waypoints.add(new LatLong(37.873000, -122.303202));
+            waypoints.add(new LatLong(37.873000, -122.304113));
+            waypoints.add(new LatLong(37.873000, -122.305293));
+
             MissionControl missionControl = new MissionControl(this.getApplicationContext(), drone);
-            missionControl.addWaypoints(new ArrayList<LatLong>());
+            missionControl.addWaypoints(waypoints);
             missionControl.sendMissionToAPM();
+            alertUser("Drone mission sent");
+
+            final VehicleApi vehicleApi = new VehicleApi(drone);
+            vehicleApi.arm(true);
+            ControlApi.getApi(this.drone).takeoff(20, new SimpleCommandListener() {
+                @Override
+                public void onSuccess() {
+                    vehicleApi.setVehicleMode(VehicleMode.COPTER_AUTO);
+                }
+            });
         }
     }
 

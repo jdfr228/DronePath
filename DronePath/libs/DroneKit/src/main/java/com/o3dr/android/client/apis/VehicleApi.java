@@ -55,7 +55,7 @@ public class VehicleApi extends Api {
 
     private final Drone drone;
 
-    private VehicleApi(Drone drone) {
+    public VehicleApi(Drone drone) {
         this.drone = drone;
     }
 
