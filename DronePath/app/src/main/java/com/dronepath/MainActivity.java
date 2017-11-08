@@ -24,6 +24,8 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
@@ -77,15 +79,15 @@ public class MainActivity extends AppCompatActivity
         List<LatLong> points = mapFragment.getLatLongWaypoints();
 
         if (points == null || points.size() == 0) {
-            // TODO- Simply move the map if no points have been drawn
+            // Simply move the map if no points have been drawn
+            LatLng newLocation = new LatLng(latitude, longitude);
+            CameraUpdate update = CameraUpdateFactory.newLatLngZoom(newLocation, mapFragment.getDefaultZoom());
+            mapFragment.getMap().animateCamera(update);
 
         } else {
-            // Add a waypoint on the map
-            // TODO- Ask Edwin if the projection stuff is necessary
+            // Add a new waypoint on the map
             LatLng latLng = new LatLng(latitude, longitude);
             mapFragment.addPoint(latLng);
-
-            // TODO- fix waypoint graphic rendering (it seems like they're connected but the marker graphic doesn't appear)
         }
 
         // Save entered Latitude and Longitude for the next time the Dialog opens
@@ -265,6 +267,7 @@ public class MainActivity extends AppCompatActivity
 
             case R.id.nav_start:
                 // TODO Handle starting the drone flight
+                // TODO- this and the connect button will likely be combined into 1 button on the main screen
                 break;
         }
 

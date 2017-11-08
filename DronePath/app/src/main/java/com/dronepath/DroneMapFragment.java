@@ -171,6 +171,8 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         return mMap;
     }
 
+    public int getDefaultZoom() { return mDefaultZoom; }
+
     public void addPoint (LatLng point){
         latLngPoints.add(point);
         if (polypath == null) {
