@@ -11,6 +11,8 @@
     <string name="gps_address">GPS Address</string>
     <string name="longitude">Longitude</string>
     <string name="latitude">Latitude</string>
+    <string name="addAsWaypoint">Add as a waypoint</string>
+
     <string name="flight_vars">Flight Variables</string>
     <string name="connect">Connect</string>
     <string name="start">Start Flight</string>

@@ -10,6 +10,7 @@ import android.preference.EditTextPreference;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 /**
@@ -28,8 +29,10 @@ public class GPSLocationDialogFragment extends DialogFragment {
         LayoutInflater inflater = getActivity().getLayoutInflater();
         final View view = inflater.inflate(R.layout.gps_dialog, null);
 
+        // References to layout elements
         final EditText latitudeText = (EditText) view.findViewById(R.id.latitude);
         final EditText longitudeText = (EditText) view.findViewById(R.id.longitude);
+        final CheckBox waypointCheckBox = (CheckBox) view.findViewById(R.id.addAsWaypoint);
 
         // Load saved inputs
         latitudeText.setText(this.getArguments().getString("savedLatitude"));
@@ -51,8 +54,11 @@ public class GPSLocationDialogFragment extends DialogFragment {
                             double latitude = Double.parseDouble(latitudeText.getText().toString());
                             double longitude = Double.parseDouble(longitudeText.getText().toString());
 
+                            // Look at checkbox to see if the address should be added as a waypoint
+                            boolean waypoint = waypointCheckBox.isChecked();
+
                             // Pass to MainActivity to handle Map integration
-                            mListener.onGPSLocationDialogComplete(latitude, longitude);
+                            mListener.onGPSLocationDialogComplete(latitude, longitude, waypoint);
                         }
                     }
                 })
@@ -71,7 +77,7 @@ public class GPSLocationDialogFragment extends DialogFragment {
     // An Interface allows the Dialog to communicate with the Main Activity
     // The Main Activity is where the onComplete function is actually implemented
     public interface OnCompleteListener {
-        void onGPSLocationDialogComplete(double latitude, double longitude);
+        void onGPSLocationDialogComplete(double latitude, double longitude, boolean waypoint);
     }
 
     // Make sure the Main Activity has implemented the Interface

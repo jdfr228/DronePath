@@ -74,20 +74,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     // GPSLocationDialogFragment.OnCompleteListener implementation (add GPS waypoint)
-    public void onGPSLocationDialogComplete(double latitude, double longitude) {
+    public void onGPSLocationDialogComplete(double latitude, double longitude, boolean isWaypoint) {
         mapFragment = (DroneMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         List<LatLong> points = mapFragment.getLatLongWaypoints();
 
-        if (points == null || points.size() == 0) {
-            // Simply move the map if no points have been drawn
-            LatLng newLocation = new LatLng(latitude, longitude);
-            CameraUpdate update = CameraUpdateFactory.newLatLngZoom(newLocation, mapFragment.getDefaultZoom());
-            mapFragment.getMap().animateCamera(update);
-
-        } else {
+        if (isWaypoint) {
             // Add a new waypoint on the map
             LatLng latLng = new LatLng(latitude, longitude);
             mapFragment.addPoint(latLng);
+
+        } else {
+            // Simply move the map if the address won't be added as a waypoint
+            LatLng newLocation = new LatLng(latitude, longitude);
+            CameraUpdate update = CameraUpdateFactory.newLatLngZoom(newLocation, mapFragment.getDefaultZoom());
+            mapFragment.getMap().animateCamera(update);
         }
 
         // Save entered Latitude and Longitude for the next time the Dialog opens
