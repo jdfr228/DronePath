@@ -37,6 +37,7 @@ public class GPSLocationDialogFragment extends DialogFragment {
         // Load saved inputs
         latitudeText.setText(this.getArguments().getString("savedLatitude"));
         longitudeText.setText(this.getArguments().getString("savedLongitude"));
+        waypointCheckBox.setChecked(this.getArguments().getBoolean("savedCheckBox"));
 
         // Define the dialog
         builder.setView(view)
