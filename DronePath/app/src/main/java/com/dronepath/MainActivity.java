@@ -454,7 +454,12 @@ public class MainActivity extends AppCompatActivity
     // Logic for the connect/arm/disarm button
     public void manageDrone() {
         State vehicleState = this.drone.getAttribute(AttributeType.STATE);
-
+        if(droneState==0)
+        {animateConnectArmFab(DRONE_CONNECTED); droneState=droneState+1;}
+        else if(droneState==1){
+        animateConnectArmFab(DRONE_DISCONNECTED); droneState=droneState+1;}
+        else if(droneState==2){
+        animateConnectArmFab(DRONE_ARMED); droneState=0;}
         if (!this.drone.isConnected()) {    // Attempt to connect
             alertUser("Connecting to drone...");
 
