@@ -342,7 +342,18 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void startFlight() {
-        alertUser("Arming drone");
+        if(mapFragment.isSplineComplete()) {
+            List<LatLong> waypoints = mapFragment.getLatLongWaypoints();
+
+            if(waypoints.size() == 0) {
+                alertUser("No waypoints drawn/added. Please add waypoints first");
+                return;
+            }
+
+            missionControl.addWaypoints(mapFragment.getLatLongWaypoints());
+            missionControl.sendMissionToAPM();
+        }
+
         VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
@@ -360,17 +371,9 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        alertUser("Sending waypoints");
-        if(mapFragment.isSplineComplete()) {
-            missionControl.addWaypoints(mapFragment.getLatLongWaypoints());
-            missionControl.sendMissionToAPM();
-        }
-
-        alertUser("Drone taking off");
         ControlApi.getApi(drone).takeoff(10, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
-                alertUser("Drone in AUTO mode");
                 VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO);
             }
 
@@ -402,14 +405,15 @@ public class MainActivity extends AppCompatActivity
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
-                mapFragment.onDroneConnected();
+                LatLong dummy = new LatLong(0,0);
+                mapFragment.onDroneConnected(dummy);
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
                 alertUser("Drone Disconnected");
                 break;
 
-            case AttributeEvent.HOME_UPDATED:
+            case AttributeEvent.GPS_POSITION:
                 Gps location = drone.getAttribute(AttributeType.GPS);
                 mapFragment.onDroneGPSUpdated(location.getPosition());
                 break;
@@ -435,8 +439,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onDestroy() {
+        super.onDestroy();
         if(this.drone.isConnected()) {
             this.drone.disconnect();
             // TODO (William) Update connected status here

@@ -1,6 +1,7 @@
 package com.dronepath;
 
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -150,18 +151,18 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         request.setNumUpdates(1);
         request.setInterval(0);
-       try {
-           LocationServices.FusedLocationApi
-                   .requestLocationUpdates(mClient, request, new LocationListener() {
-                       @Override
-                       public void onLocationChanged(Location location) {
-                           Log.i(TAG, "Location: " + location);
-                           mLastLocation = location;
-                           updateUI();
-                       }
-                   });
-       }
-       catch (SecurityException e){Log.i(TAG, "catch getLocation");}
+        try {
+            LocationServices.FusedLocationApi
+                    .requestLocationUpdates(mClient, request, new LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            Log.i(TAG, "Location: " + location);
+                            mLastLocation = location;
+                            updateUI();
+                        }
+                    });
+        }
+        catch (SecurityException e){Log.i(TAG, "catch getLocation");}
     }
 
     @Override
@@ -269,14 +270,18 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         getMap().getUiSettings().setScrollGesturesEnabled(true);
     }
 
-    public void onDroneConnected(){
-       droneMarker = getMap().addMarker(new MarkerOptions()
-               .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-               .draggable(false));
+    public void onDroneConnected(LatLong drone){
+        MarkerOptions markerOptions = new MarkerOptions();
+
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+        markerOptions.draggable(false);
+        markerOptions.position(new LatLng(drone.getLatitude(), drone.getLongitude()));
+
+        droneMarker = getMap().addMarker(markerOptions);
     }
 
     public void onDroneGPSUpdated(LatLong drone){
         if (droneMarker != null)
-            droneMarker.setPosition(new LatLng(drone.getLatitude(), drone.getLatitude()));
+            droneMarker.setPosition(new LatLng(drone.getLatitude(), drone.getLongitude()));
     }
 }
