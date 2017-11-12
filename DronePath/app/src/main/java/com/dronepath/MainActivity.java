@@ -122,6 +122,7 @@ public class MainActivity extends AppCompatActivity
 
         mapFragment = (DroneMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+        mapFragment.setRetainInstance(true);
         mapFragment.setOnDragListener(new DroneMapWrapper.OnDragListener() {
             @Override
             public void onDrag(MotionEvent motionEvent) {
@@ -164,13 +165,6 @@ public class MainActivity extends AppCompatActivity
         delete_fab.setOnClickListener(this);
         open_fab = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.open_fab);
         close_fab = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.close_fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -194,6 +188,8 @@ public class MainActivity extends AppCompatActivity
                 animateFabButtons();
                 break;
             case R.id.edit_fab:
+                if (mapFragment.isSplineComplete())
+                    break;
                 isMapDrawable = !isMapDrawable;
                 if (isMapDrawable) {
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(false);
@@ -201,7 +197,6 @@ public class MainActivity extends AppCompatActivity
                 else {
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
                 }
-
                 break;
             case R.id.place_fab:
                 mapFragment.convertToSpline();

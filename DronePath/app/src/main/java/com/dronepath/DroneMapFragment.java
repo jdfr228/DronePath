@@ -187,6 +187,10 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         oldpolypath.add(point);
         polypath.setPoints(oldpolypath);
 
+        if (isSplineComplete()){
+            spline_complete = false;
+            convertToSpline();
+        }
     }
 
     public List<LatLong> convertToLatLong(List<LatLng> points){
@@ -210,10 +214,9 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     public void convertToSpline(){
         if (isSplineComplete() || polypath == null)
             return;
-        List<LatLong> new_points = MathUtils.SplinePath.process(convertToLatLong(polypath.getPoints()));
+        //List<LatLong> new_points = MathUtils.SplinePath.process(convertToLatLong(polypath.getPoints()));
+        List<LatLong> new_points = convertToLatLong(polypath.getPoints());
         new_points = MathUtils.simplify(new_points, .0001);
-        //List<LatLong> new_points = convertToLatLong(polypath.getPoints());
-        //new_points = MathUtils.SplinePath.process(new_points);
         polypath.setPoints(convertToLatLng(new_points));
         for (LatLng point : polypath.getPoints()){
             Marker m = getMap().addMarker(new MarkerOptions().position(point));
@@ -238,11 +241,11 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
 
     public void clearPoints(){
         markerArray.clear();
-        polypath.remove();
+        if (polypath != null)
+            polypath.remove();
         polypath = null;
         getMap().clear();
         spline_complete = false;
-        droneMarker = null;
     }
 
 
