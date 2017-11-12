@@ -120,9 +120,12 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Create map fragment
         mapFragment = (DroneMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.setRetainInstance(true);
+        mapFragment.setRetainInstance(true); // Makes sure map is saved when orientation is changed
+        // Set the drag listener for the map
+        // Only adds points when the drawing is enabled
         mapFragment.setOnDragListener(new DroneMapWrapper.OnDragListener() {
             @Override
             public void onDrag(MotionEvent motionEvent) {
@@ -155,6 +158,7 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Set up menu FABs
         menu_fab = (FloatingActionButton) findViewById(R.id.menu_fab);
         edit_fab = (FloatingActionButton) findViewById(R.id.edit_fab);
         edit_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
@@ -184,6 +188,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    // Handles input when any FAB get pressed
     public void onClick(View v) {
         int id = v.getId();
         switch (id){
@@ -306,6 +311,7 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    // Animate the menu buttons on map screen to open and close
     public void animateFabButtons(){
         if (isFabExpanded){
             isFabExpanded = false;
