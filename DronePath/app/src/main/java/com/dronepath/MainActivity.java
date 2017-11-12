@@ -22,7 +22,9 @@ import android.view.MenuItem;
 import android.app.DialogFragment;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Toast;
 
+import com.dronepath.mission.MissionControl;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -31,19 +33,33 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
+import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
+import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
+import com.o3dr.services.android.lib.drone.attribute.AttributeType;
+import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
+import com.o3dr.services.android.lib.drone.connection.ConnectionType;
+import com.o3dr.services.android.lib.drone.property.Gps;
+import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.drone.property.Type;
+import com.o3dr.services.android.lib.drone.property.VehicleMode;
+import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
+import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
 import java.util.List;
 import java.util.ResourceBundle;
+
+import static com.dronepath.DronePath.*;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
                     FlightVarsDialogFragment.OnCompleteListener,
                     GPSLocationDialogFragment.OnCompleteListener,
-                    View.OnClickListener{
+                    View.OnClickListener, TowerListener, DroneListener, LinkListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
@@ -58,6 +74,13 @@ public class MainActivity extends AppCompatActivity
     private Animation open_fab,close_fab;
 
     private DroneMapFragment mapFragment;
+
+    // DronePath stuff
+    private DronePath dronePath;
+    private ControlTower controlTower;
+    private MissionControl missionControl;
+    private Drone drone;
+    private final Handler handler = new Handler();
 
     // TODO - since the variables are encapsulated in MainActivity, setters may not be needed?
     public void setVelocity(double newVelocity) {
@@ -160,6 +183,10 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        this.controlTower = new ControlTower(getApplicationContext());
+        this.drone = new Drone(getApplicationContext());
+        this.missionControl = new MissionControl(getApplicationContext(), drone);
     }
 
     @Override
@@ -263,11 +290,13 @@ public class MainActivity extends AppCompatActivity
 
             case R.id.nav_connect:
                 // TODO Handle drone connection
+                connectToDrone();
                 break;
 
             case R.id.nav_start:
                 // TODO Handle starting the drone flight
                 // TODO- this and the connect button will likely be combined into 1 button on the main screen
+                startFlight();
                 break;
         }
 
@@ -298,6 +327,139 @@ public class MainActivity extends AppCompatActivity
             edit_fab.setClickable(true);
             place_fab.setClickable(true);
             delete_fab.setClickable(true);
+        }
+    }
+
+    private void connectToDrone() {
+        alertUser("Connecting to drone");
+        Bundle extraParams = new Bundle();
+        extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
+
+        ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
+                extraParams,
+                null);
+        this.drone.connect(connectionParams);
+    }
+
+    private void startFlight() {
+        alertUser("Arming drone");
+        VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Arming successful");
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Arming not successful: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Arming timed out");
+            }
+        });
+
+        alertUser("Sending waypoints");
+        if(mapFragment.isSplineComplete()) {
+            missionControl.addWaypoints(mapFragment.getLatLongWaypoints());
+            missionControl.sendMissionToAPM();
+        }
+
+        alertUser("Drone taking off");
+        ControlApi.getApi(drone).takeoff(10, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Drone in AUTO mode");
+                VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO);
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Drone failed to take off: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Drone take off timed out");
+            }
+        });
+    }
+
+    @Override
+    public void onTowerConnected() {
+        this.controlTower.registerDrone(this.drone, this.handler);
+        this.drone.registerDroneListener(this);
+    }
+
+    @Override
+    public void onTowerDisconnected() {
+
+    }
+
+    @Override
+    public void onDroneEvent(String event, Bundle extras) {
+        switch (event) {
+            case AttributeEvent.STATE_CONNECTED:
+                alertUser("Drone Connected");
+                break;
+
+            case AttributeEvent.STATE_DISCONNECTED:
+                alertUser("Drone Disconnected");
+                break;
+
+            case AttributeEvent.HOME_UPDATED:
+                Gps location = drone.getAttribute(AttributeType.GPS);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void onDroneServiceInterrupted(String errorMsg) {
+
+    }
+
+    protected void alertUser(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        this.controlTower.connect(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(this.drone.isConnected()) {
+            this.drone.disconnect();
+            // TODO (William) Update connected status here
+        }
+        this.controlTower.unregisterDrone(this.drone);
+        this.controlTower.disconnect();
+    }
+
+    @Override
+    public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus) {
+        switch(connectionStatus.getStatusCode()){
+            case LinkConnectionStatus.CONNECTED:
+                alertUser("Drone well connected");
+                break;
+
+            case LinkConnectionStatus.FAILED:
+                Bundle extras = connectionStatus.getExtras();
+                String errorMsg = null;
+                if (extras != null) {
+                    errorMsg = extras.getString(LinkConnectionStatus.EXTRA_ERROR_MSG);
+                }
+
+                Toast.makeText(getApplicationContext(), "Connection failed: " + errorMsg,
+                        Toast.LENGTH_LONG).show();
+                break;
         }
     }
 }

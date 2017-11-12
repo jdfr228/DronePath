@@ -45,6 +45,7 @@ public class MissionControl {
     // Private member variables
     private final Drone drone;
     private final Context context;
+    private final MissionApi missionApi;
     private final LocalBroadcastManager lbm;
     private final List<MissionItem> missionItems = new ArrayList<MissionItem>();
 
@@ -54,6 +55,7 @@ public class MissionControl {
         // TODO Not sure if this works...
         this.drone = drone;
         this.context = context;
+        this.missionApi = new MissionApi(drone);
 
         lbm = LocalBroadcastManager.getInstance(this.context);
     }
@@ -77,7 +79,7 @@ public class MissionControl {
     }
 
     public void sendMissionToAPM() {
-        MissionApi.getApi(this.drone).setMission(generateMission(), true);
+        missionApi.setMission(generateMission(), true);
     }
 
     public void addWaypoints(List<LatLong> points) {
@@ -95,9 +97,5 @@ public class MissionControl {
     public void notifyMissionUpdate() {
         currentMission = generateMission();
         lbm.sendBroadcast(new Intent(ACTION_MISSION_PROXY_UPDATE));
-    }
-
-    private void getDummyPath() {
-
     }
 }
