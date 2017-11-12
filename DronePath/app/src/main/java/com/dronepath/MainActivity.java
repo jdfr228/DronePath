@@ -402,6 +402,7 @@ public class MainActivity extends AppCompatActivity
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
+                mapFragment.onDroneConnected();
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -410,6 +411,7 @@ public class MainActivity extends AppCompatActivity
 
             case AttributeEvent.HOME_UPDATED:
                 Gps location = drone.getAttribute(AttributeType.GPS);
+                mapFragment.onDroneGPSUpdated(location.getPosition());
                 break;
 
             default:

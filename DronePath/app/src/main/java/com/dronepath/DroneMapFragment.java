@@ -20,6 +20,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -50,6 +51,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     private Polyline polypath;
     private ArrayList<Marker> markerArray = new ArrayList<Marker>();
     private boolean spline_complete;
+    private Marker droneMarker = null;
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -239,6 +241,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         polypath = null;
         getMap().clear();
         spline_complete = false;
+        droneMarker = null;
     }
 
 
@@ -264,5 +267,16 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     @Override
     public void onMarkerDragEnd(Marker marker) {
         getMap().getUiSettings().setScrollGesturesEnabled(true);
+    }
+
+    public void onDroneConnected(){
+       droneMarker = getMap().addMarker(new MarkerOptions()
+               .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+               .draggable(false));
+    }
+
+    public void onDroneGPSUpdated(LatLong drone){
+        if (droneMarker != null)
+            droneMarker.setPosition(new LatLng(drone.getLatitude(), drone.getLatitude()));
     }
 }
