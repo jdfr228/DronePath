@@ -221,7 +221,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         for (LatLng point : polypath.getPoints()){
             Marker m = getMap().addMarker(new MarkerOptions().position(point));
             m.setDraggable(true);
-            m.setTitle("Point: " + point.latitude + "," + point.longitude);
+            m.setTitle(String.format("Point: %.4f , %.4f", point.latitude, point.longitude));
             markerArray.add(m);
         }
         spline_complete = true;
@@ -262,7 +262,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     public void onMarkerDrag(Marker marker) {
         ArrayList<LatLng> points = new ArrayList<>();
         for (Marker m: markerArray){
-            m.setTitle("Point: " + m.getPosition().latitude + "," + m.getPosition().longitude);
+            m.setTitle(String.format("Point: %.4f , %.4f", m.getPosition().latitude, m.getPosition().longitude));
             points.add(m.getPosition());
         }
         polypath.setPoints(points);

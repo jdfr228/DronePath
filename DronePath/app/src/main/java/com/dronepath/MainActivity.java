@@ -157,8 +157,11 @@ public class MainActivity extends AppCompatActivity
 
         menu_fab = (FloatingActionButton) findViewById(R.id.menu_fab);
         edit_fab = (FloatingActionButton) findViewById(R.id.edit_fab);
+        edit_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         place_fab = (FloatingActionButton) findViewById(R.id.place_fab);
+        place_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         delete_fab = (FloatingActionButton) findViewById(R.id.delete_fab);
+        delete_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         menu_fab.setOnClickListener(this);
         edit_fab.setOnClickListener(this);
         place_fab.setOnClickListener(this);
@@ -192,9 +195,11 @@ public class MainActivity extends AppCompatActivity
                     break;
                 isMapDrawable = !isMapDrawable;
                 if (isMapDrawable) {
+                    edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorPrimary));
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(false);
                 }
                 else {
+                    edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
                 }
                 break;
@@ -202,10 +207,15 @@ public class MainActivity extends AppCompatActivity
                 mapFragment.convertToSpline();
                 isMapDrawable = false;
                 mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+                edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
                 break;
             case R.id.delete_fab:
-                if (mapFragment != null)
+                if (mapFragment != null) {
                     mapFragment.clearPoints();
+                    isMapDrawable = false;
+                    mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+                    edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
+                }
                 break;
         }
     }
@@ -301,6 +311,7 @@ public class MainActivity extends AppCompatActivity
             isFabExpanded = false;
             isMapDrawable = false;
             mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+            edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
             menu_fab.setImageResource(R.mipmap.ic_more_vert_white_24dp);
             edit_fab.startAnimation(close_fab);
             place_fab.startAnimation(close_fab);
