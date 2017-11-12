@@ -73,10 +73,10 @@ public class MainActivity extends AppCompatActivity
 
     private DroneMapFragment mapFragment;
 
-    // DronePath stuff
+    // Drone related stuff
+    private Drone drone;
     private ControlTower controlTower;
     private MissionControl missionControl;
-    private Drone drone;
     private final Handler handler = new Handler();
 
     // TODO - since the variables are encapsulated in MainActivity, setters may not be needed?
@@ -326,6 +326,9 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Connects to drone through UDP protocol
+     */
     private void connectToDrone() {
         Bundle extraParams = new Bundle();
         extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
@@ -336,7 +339,17 @@ public class MainActivity extends AppCompatActivity
         this.drone.connect(connectionParams);
     }
 
+    /**
+     * Checks if drone is connected, then sends mission, arm drone, and take off!
+     */
     private void startFlight() {
+        // Checks of a drone is connected
+        if(!drone.isConnected()) {
+            alertUser("Drone is not connected");
+            return;
+        }
+
+        // Sends waypoints if we have them, if not we request the user to make them
         if(mapFragment.isSplineComplete()) {
             List<LatLong> waypoints = mapFragment.getLatLongWaypoints();
 
@@ -349,6 +362,7 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
+        // Arming drone
         VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
@@ -366,6 +380,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        // Drone take off
         ControlApi.getApi(drone).takeoff(10, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
@@ -384,17 +399,29 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    /**
+     * Safely handles when the Tower drone service connects
+     */
     @Override
     public void onTowerConnected() {
         this.controlTower.registerDrone(this.drone, this.handler);
         this.drone.registerDroneListener(this);
     }
 
+    /**
+     * Safely handles when the Tower drone service disconnects
+     */
     @Override
     public void onTowerDisconnected() {
 
     }
 
+    /**
+     * Listener that responds to events and respond accordingly
+     *
+     * @param event
+     * @param extras
+     */
     @Override
     public void onDroneEvent(String event, Bundle extras) {
         switch (event) {
@@ -408,6 +435,7 @@ public class MainActivity extends AppCompatActivity
                 alertUser("Drone Disconnected");
                 break;
 
+            // When drone has valid GPS location. Used for displaying the drone's location
             case AttributeEvent.GPS_POSITION:
                 Gps location = drone.getAttribute(AttributeType.GPS);
                 mapFragment.onDroneGPSUpdated(location.getPosition());
@@ -420,25 +448,35 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onDroneServiceInterrupted(String errorMsg) {
-
+        alertUser(errorMsg);
     }
 
+    /**
+     * Displays a short notification-like message on the screen for the user to see
+     *
+     * @param message message to display
+     */
     protected void alertUser(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
     }
 
+    /**
+     * Safely handles everything needed at start
+     */
     @Override
     public void onStart() {
         super.onStart();
         this.controlTower.connect(this);
     }
 
+    /**
+     * Safely handles everything when app closes
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
         if(this.drone.isConnected()) {
             this.drone.disconnect();
-            // TODO (William) Update connected status here
         }
         this.controlTower.unregisterDrone(this.drone);
         this.controlTower.disconnect();

@@ -33,13 +33,6 @@ import java.util.List;
 public class MissionControl {
     public static final String ACTION_MISSION_PROXY_UPDATE = Utils.PACKAGE_NAME + ".ACTION_MISSION_PROXY_UPDATE";
 
-    private static final IntentFilter eventFilter = new IntentFilter();
-
-    static {
-        eventFilter.addAction(AttributeEvent.MISSION_UPDATED);
-        eventFilter.addAction(AttributeEvent.MISSION_RECEIVED);
-    }
-
     // Private member variables
     private final Drone drone;
     private final Context context;
@@ -47,10 +40,7 @@ public class MissionControl {
     private final LocalBroadcastManager lbm;
     private final List<MissionItem> missionItems = new ArrayList<MissionItem>();
 
-    private Mission currentMission;
-
     public MissionControl(Context context, Drone drone) {
-        // TODO Not sure if this works...
         this.drone = drone;
         this.context = context;
         this.missionApi = new MissionApi(drone);
@@ -58,7 +48,11 @@ public class MissionControl {
         lbm = LocalBroadcastManager.getInstance(this.context);
     }
 
-    // Adds take off, waypoints, and RTL to a mission
+    /**
+     * Generate a mission based on waypoints added through addWaypoints()
+     *
+     * @return A Mission object to be send directly to the drone
+     */
     private Mission generateMission() {
         Mission mission = new Mission();
 
@@ -76,10 +70,18 @@ public class MissionControl {
         return mission;
     }
 
+    /**
+     * Calls generateMission() to send a planned mission with waypoints to the drone
+     */
     public void sendMissionToAPM() {
         missionApi.setMission(generateMission(), true);
     }
 
+    /**
+     * Adds a list of latittude-longitude points so they can be part of a mission later
+     *
+     * @param points LatLong objects containing mission waypoints
+     */
     public void addWaypoints(List<LatLong> points) {
         float alt = 60F;
 
@@ -93,7 +95,6 @@ public class MissionControl {
     }
 
     public void notifyMissionUpdate() {
-        currentMission = generateMission();
         lbm.sendBroadcast(new Intent(ACTION_MISSION_PROXY_UPDATE));
     }
 }
