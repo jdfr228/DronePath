@@ -53,13 +53,11 @@ import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import static com.dronepath.DronePath.*;
-
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
                     FlightVarsDialogFragment.OnCompleteListener,
                     GPSLocationDialogFragment.OnCompleteListener,
-                    View.OnClickListener, TowerListener, DroneListener, LinkListener {
+                    View.OnClickListener, TowerListener, DroneListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
@@ -76,7 +74,6 @@ public class MainActivity extends AppCompatActivity
     private DroneMapFragment mapFragment;
 
     // DronePath stuff
-    private DronePath dronePath;
     private ControlTower controlTower;
     private MissionControl missionControl;
     private Drone drone;
@@ -253,7 +250,6 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
@@ -331,7 +327,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void connectToDrone() {
-        alertUser("Connecting to drone");
         Bundle extraParams = new Bundle();
         extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
 
@@ -345,13 +340,13 @@ public class MainActivity extends AppCompatActivity
         if(mapFragment.isSplineComplete()) {
             List<LatLong> waypoints = mapFragment.getLatLongWaypoints();
 
-            if(waypoints.size() == 0) {
-                alertUser("No waypoints drawn/added. Please add waypoints first");
-                return;
-            }
-
             missionControl.addWaypoints(mapFragment.getLatLongWaypoints());
             missionControl.sendMissionToAPM();
+        }
+
+        else {
+            alertUser("No waypoints drawn");
+            return;
         }
 
         VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
@@ -447,25 +442,5 @@ public class MainActivity extends AppCompatActivity
         }
         this.controlTower.unregisterDrone(this.drone);
         this.controlTower.disconnect();
-    }
-
-    @Override
-    public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus) {
-        switch(connectionStatus.getStatusCode()){
-            case LinkConnectionStatus.CONNECTED:
-                alertUser("Drone well connected");
-                break;
-
-            case LinkConnectionStatus.FAILED:
-                Bundle extras = connectionStatus.getExtras();
-                String errorMsg = null;
-                if (extras != null) {
-                    errorMsg = extras.getString(LinkConnectionStatus.EXTRA_ERROR_MSG);
-                }
-
-                Toast.makeText(getApplicationContext(), "Connection failed: " + errorMsg,
-                        Toast.LENGTH_LONG).show();
-                break;
-        }
     }
 }
