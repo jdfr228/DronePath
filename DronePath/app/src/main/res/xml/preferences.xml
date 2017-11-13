@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <PreferenceCategory
+        android:title="@string/pref_title_variable_parameters"
+        android:key="pref_key_flight_parameters">
+
+        <EditTextPreference
+            android:key="pref_key_velocity_max"
+            android:title="@string/pref_title_velocity_max"
+            android:inputType="numberDecimal"
+            android:defaultValue="10.0" />
+        <EditTextPreference
+            android:key="pref_key_altitude_max"
+            android:title="@string/pref_title_altitude_max"
+            android:inputType="numberDecimal"
+            android:defaultValue="10.0" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_connection_parameters"
+        android:key="pref_key_drone_connection_parameters">
+
+        <EditTextPreference
+            android:key="pref_key_drone_port"
+            android:title="@string/pref_title_drone_port"
+            android:inputType="number"
+            android:defaultValue="14550"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_other_settings"
+        android:key="pref_key_other_settings">
+
+        <PreferenceScreen
+            android:key="pref_key_telemetry_button"
+            android:title="@string/pref_title_telemetry_button"
+            android:persistent="false">
+
+            <Preference
+                android:key="pref_key_telemetry_latitude"
+                android:title="@string/pref_title_telemetry_latitude"
+                android:summary="None Reported" />
+            <Preference
+                android:key="pref_key_telemetry_longitude"
+                android:title="@string/pref_title_telemetry_longitude"
+                android:summary="None Reported" />
+            <Preference
+                android:key="pref_key_telemetry_velocity"
+                android:title="@string/pref_title_telemetry_velocity"
+                android:summary="None Reported" />
+            <Preference
+                android:key="pref_key_telemetry_altitude"
+                android:title="@string/pref_title_telemetry_altitude"
+                android:summary="None Reported" />
+
+        </PreferenceScreen>
+    </PreferenceCategory>
+
+</PreferenceScreen>
+
+    <!--<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.dronepath.SettingsActivity">
+
+        <Button
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="Connect"
+            android:id="@+id/btnConnect"
+            android:onClick="onBtnConnectTap"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" />
+
+    </android.support.constraint.ConstraintLayout>-->

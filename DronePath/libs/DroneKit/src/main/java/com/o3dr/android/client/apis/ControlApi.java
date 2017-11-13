@@ -60,7 +60,7 @@ public class ControlApi extends Api {
 
     private final Drone drone;
 
-    private ControlApi(Drone drone) {
+    public ControlApi(Drone drone) {
         this.drone = drone;
     }
 

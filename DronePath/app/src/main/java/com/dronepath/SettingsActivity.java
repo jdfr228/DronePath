@@ -1,162 +1,35 @@
 package com.dronepath;
 
-import android.os.Handler;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
+import android.preference.PreferenceFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.dronepath.mission.MissionControl;
-import com.o3dr.android.client.ControlTower;
-import com.o3dr.android.client.Drone;
-import com.o3dr.android.client.apis.ControlApi;
-import com.o3dr.android.client.apis.VehicleApi;
-import com.o3dr.android.client.interfaces.DroneListener;
-import com.o3dr.android.client.interfaces.TowerListener;
-import com.o3dr.services.android.lib.coordinate.LatLong;
-import com.o3dr.services.android.lib.coordinate.LatLongAlt;
-import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
-import com.o3dr.services.android.lib.drone.attribute.AttributeType;
-import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
-import com.o3dr.services.android.lib.drone.connection.ConnectionType;
-import com.o3dr.services.android.lib.drone.property.Altitude;
-import com.o3dr.services.android.lib.drone.property.Gps;
-import com.o3dr.services.android.lib.drone.property.Home;
-import com.o3dr.services.android.lib.drone.property.Speed;
-import com.o3dr.services.android.lib.drone.property.State;
-import com.o3dr.services.android.lib.drone.property.Type;
-import com.o3dr.services.android.lib.drone.property.VehicleMode;
-import com.o3dr.services.android.lib.model.SimpleCommandListener;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-
-public class SettingsActivity extends AppCompatActivity implements TowerListener, DroneListener {
-
-    // Drone Kit Stuff
-    private ControlTower controlTower;
-    private Drone drone;
-    private int droneType = Type.TYPE_UNKNOWN;
-    private final Handler handler = new Handler();
-    Spinner modeSelector;
+public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        // Initialize the DroneKit service manager
-        this.controlTower = new ControlTower(getApplicationContext());
-        // TODO Not sure why there's a context argument here, isn't in the tutorial
-        this.drone = new Drone(getApplicationContext());
+        // Apply the Preferences xml (in res -> xml)
+        PreferenceFragment prefs = new SettingsFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.fragment_container, prefs);
+        fragmentTransaction.commit();
+
+        // TODO- Set up Listener (may be a better way to do it?) to update the Telemetry summaries
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        this.controlTower.connect(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        if(this.drone.isConnected()) {
-            this.drone.disconnect();
-            // TODO (William) Update connected status here
-        }
-        this.controlTower.unregisterDrone(this.drone);
-        this.controlTower.disconnect();
-    }
-
-    @Override
-    public void onTowerConnected() {
-        // TODO (William) Questionable arguments...
-        this.controlTower.registerDrone(this.drone, this.handler);
-        this.drone.registerDroneListener(this);
-    }
-
-    @Override
-    public void onTowerDisconnected() {
-
-    }
-
-    @Override
-    public void onDroneEvent(String event, Bundle extras) {
-        switch (event) {
-            case AttributeEvent.STATE_CONNECTED:
-                alertUser("Drone Connected");
-                updateConnectedButton(this.drone.isConnected());
-                break;
-
-            case AttributeEvent.STATE_DISCONNECTED:
-                alertUser("Drone Disconnected");
-                updateConnectedButton(this.drone.isConnected());
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    @Override
-    public void onDroneServiceInterrupted(String errorMsg) {
-
-    }
-
-    public void onBtnConnectTap(View view) {
-        if(this.drone.isConnected()) {
-            this.drone.disconnect();
-        } else {
-            Bundle extraParams = new Bundle();
-            extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
-
-            ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
-                                                                           extraParams,
-                                                                           null);
-            this.drone.connect(connectionParams);
-
-            ArrayList<LatLong> waypoints = new ArrayList<LatLong>();
-            waypoints.add(new LatLong(37.873000, -122.303202));
-            waypoints.add(new LatLong(37.873000, -122.304113));
-            waypoints.add(new LatLong(37.873000, -122.305293));
-
-            MissionControl missionControl = new MissionControl(this.getApplicationContext(), drone);
-            missionControl.addWaypoints(waypoints);
-            missionControl.sendMissionToAPM();
-            alertUser("Drone mission sent");
-
-            final VehicleApi vehicleApi = new VehicleApi(drone);
-            vehicleApi.arm(true);
-            ControlApi.getApi(this.drone).takeoff(20, new SimpleCommandListener() {
-                @Override
-                public void onSuccess() {
-                    vehicleApi.setVehicleMode(VehicleMode.COPTER_AUTO);
-                }
-            });
-        }
-    }
-
-    protected void alertUser(String message) {
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-    }
-
-    protected void updateConnectedButton(Boolean isConnected) {
-        Button connectButton = (Button)findViewById(R.id.btnConnect);
-        if (isConnected) {
-            connectButton.setText("Disconnect");
-        } else {
-            connectButton.setText("Connect");
-        }
-    }
-
-    public void onFlightModeSelected(View view) {
-        VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
-        // this.drone.changeVehicleMode(vehicleMode);
     }
 }

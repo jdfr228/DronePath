@@ -37,23 +37,25 @@ import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
+import com.o3dr.services.android.lib.drone.attribute.AttributeEventExtra;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
-import com.o3dr.services.android.lib.drone.property.State;
+import com.o3dr.services.android.lib.drone.property.Altitude;
+import com.o3dr.services.android.lib.drone.property.Gps;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
-import com.o3dr.services.android.lib.model.SimpleCommandListener;
+import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
                     FlightVarsDialogFragment.OnCompleteListener,
                     GPSLocationDialogFragment.OnCompleteListener,
-                    View.OnClickListener, DroneListener,
-                    TowerListener {
+                    View.OnClickListener, TowerListener, DroneListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
@@ -70,10 +72,6 @@ public class MainActivity extends AppCompatActivity
     static final int DRONE_DISCONNECTED = 2;
     static final int DRONE_ARMED = 3;
 
-    // Drone Kit stuff
-    private ControlTower controlTower;
-    private Drone drone;
-    private final Handler handler = new Handler();
     Spinner modeSelector;
 
     // Floating Action Buttons
@@ -83,6 +81,11 @@ public class MainActivity extends AppCompatActivity
 
     private DroneMapFragment mapFragment;
 
+    // Drone related stuff
+    private Drone drone;
+    private ControlTower controlTower;
+    private MissionControl missionControl;
+    private final Handler handler = new Handler();
 
     // Dialog Listeners
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
@@ -120,8 +123,12 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Create map fragment
         mapFragment = (DroneMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+        mapFragment.setRetainInstance(true); // Makes sure map is saved when orientation is changed
+        // Set the drag listener for the map
+        // Only adds points when the drawing is enabled
         mapFragment.setOnDragListener(new DroneMapWrapper.OnDragListener() {
             @Override
             public void onDrag(MotionEvent motionEvent) {
@@ -154,11 +161,15 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Set up menu FABs
         menu_fab = (FloatingActionButton) findViewById(R.id.menu_fab);
         edit_fab = (FloatingActionButton) findViewById(R.id.edit_fab);
+        edit_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         place_fab = (FloatingActionButton) findViewById(R.id.place_fab);
+        place_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         delete_fab = (FloatingActionButton) findViewById(R.id.delete_fab);
         connect_arm_fab = (FloatingActionButton) findViewById(R.id.connect_arm_fab);
+        delete_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         menu_fab.setOnClickListener(this);
         edit_fab.setOnClickListener(this);
         place_fab.setOnClickListener(this);
@@ -166,13 +177,6 @@ public class MainActivity extends AppCompatActivity
         connect_arm_fab.setOnClickListener(this);
         open_fab = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.open_fab);
         close_fab = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.close_fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -183,31 +187,13 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        // Initialize the DroneKit service manager
         this.controlTower = new ControlTower(getApplicationContext());
-        // TODO Not sure why there's a context argument here, isn't in the tutorial
         this.drone = new Drone(getApplicationContext());
+        this.missionControl = new MissionControl(getApplicationContext(), drone);
     }
 
     @Override
-    // TODO- Is there a reason this can't be rolled into onCreate()?
-    public void onStart() {
-        super.onStart();
-        this.controlTower.connect(this);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if(this.drone.isConnected()) {
-            this.drone.disconnect();
-            // TODO (William) Update connected status here
-        }
-        this.controlTower.unregisterDrone(this.drone);
-        this.controlTower.disconnect();
-    }
-
-    @Override
+    // Handles input when any FAB get pressed
     public void onClick(View v) {
         int id = v.getId();
         switch (id){
@@ -215,32 +201,51 @@ public class MainActivity extends AppCompatActivity
                 animateFabButtons();
                 break;
             case R.id.edit_fab:
+                if (mapFragment.isSplineComplete())
+                    break;
                 isMapDrawable = !isMapDrawable;
                 if (isMapDrawable) {
+                    edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorPrimary));
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(false);
                 }
                 else {
+                    edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
                 }
-
                 break;
             case R.id.place_fab:
                 mapFragment.convertToSpline();
                 isMapDrawable = false;
                 mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+                edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
                 break;
             case R.id.delete_fab:
-                if (mapFragment != null)
+                if (mapFragment != null) {
                     mapFragment.clearPoints();
+                    isMapDrawable = false;
+                    mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+                    edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
+                }
                 break;
             case R.id.connect_arm_fab:
-                animateConnectArmFab(USER_CLICKED);
-                manageDrone();
+                if(droneState == USER_CLICKED) {
+                    animateConnectArmFab(droneState);
+                    connectToDrone();
+                }
+
+                else if (droneState == DRONE_CONNECTED) {
+                    startFlight();
+                }
+
+                else if (droneState == DRONE_ARMED) {
+                    returnHome();
+                }
                 break;
         }
     }
 
     @Override
+    // Handle when the user presses the Android back button
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -252,7 +257,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        // Inflate the menu; this adds items to the action bar if they are present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -275,7 +280,6 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
@@ -311,8 +315,9 @@ public class MainActivity extends AppCompatActivity
                 flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
                 break;
 
+            // TODO Unused
             case R.id.nav_connect:
-                // TODO Handle drone connection
+                // connectToDrone();
                 break;
         }
 
@@ -321,11 +326,13 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    // Animate the menu buttons on map screen to open and close
     public void animateFabButtons(){
         if (isFabExpanded){
             isFabExpanded = false;
             isMapDrawable = false;
             mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
+            edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
             menu_fab.setImageResource(R.mipmap.ic_more_vert_white_24dp);
             edit_fab.startAnimation(close_fab);
             place_fab.startAnimation(close_fab);
@@ -405,6 +412,8 @@ public class MainActivity extends AppCompatActivity
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, R.color.colorAccent)));
                 connect_arm_fab.setClickable(true);
+
+                droneState = USER_CLICKED;
                 break;
 
             case DRONE_ARMED:   // Show cancel/return icon
@@ -420,27 +429,152 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    /**
+     * Connects to drone through UDP protocol
+     */
+    private void connectToDrone() {
+        Bundle extraParams = new Bundle();
+        extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
 
-    // Drone Connectivity stuff TODO- see if this can be moved to clean up MainActivity?
+        ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
+                extraParams,
+                null);
+        this.drone.connect(connectionParams);
+    }
+
+    /**
+     * Checks if drone is connected, then sends mission, arm drone, and take off!
+     */
+    private void startFlight() {
+        // Checks of a drone is connected
+        if(!drone.isConnected()) {
+            alertUser("Drone is not connected");
+            return;
+        }
+
+        // Sends waypoints if we have them, if not we request the user to make them
+        if(mapFragment.isSplineComplete()) {
+            List<LatLong> waypoints = mapFragment.getLatLongWaypoints();
+
+            missionControl.addWaypoints(mapFragment.getLatLongWaypoints());
+            missionControl.sendMissionToAPM();
+        }
+
+        else {
+            alertUser("No waypoints drawn");
+            return;
+        }
+
+        // Arming drone
+        VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Arming successful");
+                droneState = DRONE_ARMED;
+                animateConnectArmFab(droneState);
+
+                // Drone take off
+                ControlApi.getApi(drone).takeoff(1, new AbstractCommandListener() {
+                    @Override
+                    public void onSuccess() {
+                        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new AbstractCommandListener() {
+                            @Override
+                            public void onSuccess() {
+                            }
+
+                            @Override
+                            public void onError(int executionError) {
+                                alertUser("Drone auto mode failed: " + executionError);
+                            }
+
+                            @Override
+                            public void onTimeout() {
+                                alertUser("Drone auto mode timed out");
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onError(int executionError) {
+                        alertUser("Drone failed to take off: " + executionError);
+                    }
+
+                    @Override
+                    public void onTimeout() {
+                        alertUser("Drone take off timed out");
+                    }
+                });
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Arming not successful: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Arming timed out");
+            }
+        });
+    }
+
+
+    private void returnHome() {
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_RTL, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Drone returning home");
+                droneState = DRONE_DISCONNECTED;
+                animateConnectArmFab(droneState);
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Drone returning home failed: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Drone returning home timed out");
+            }
+        });
+    }
+
+    /**
+     * Safely handles when the Tower drone service connects
+     */
     @Override
     public void onTowerConnected() {
-        // TODO (William) Questionable arguments...
         this.controlTower.registerDrone(this.drone, this.handler);
         this.drone.registerDroneListener(this);
     }
 
+    /**
+     * Safely handles when the Tower drone service disconnects
+     */
     @Override
     public void onTowerDisconnected() {
 
     }
 
+    /**
+     * Listener that responds to events and respond accordingly
+     *
+     * @param event
+     * @param extras
+     */
     @Override
     public void onDroneEvent(String event, Bundle extras) {
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
                 //updateConnectedButton(this.drone.isConnected());
-                animateConnectArmFab(DRONE_CONNECTED);
+                droneState = DRONE_CONNECTED;
+                animateConnectArmFab(droneState);
+
+                LatLong dummy = new LatLong(0,0);
+                mapFragment.onDroneConnected(dummy);
+
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -449,9 +583,14 @@ public class MainActivity extends AppCompatActivity
                 animateConnectArmFab(DRONE_DISCONNECTED);
                 break;
 
+            // TODO Make this more concise
             case AttributeEvent.STATE_ARMING:
                 alertUser("Arming Drone and taking off...");
-                animateConnectArmFab(DRONE_ARMED);
+//                Gps locationHome = drone.getAttribute(AttributeType.GPS);
+//                LatLongAlt droneHome = new LatLongAlt(locationHome.getPosition(), 0);
+//                Altitude altitude = drone.getAttribute(AttributeType.ALTITUDE);
+//                droneHome.setAltitude(altitude.getAltitude());
+//                VehicleApi.getApi(drone).setVehicleHome(droneHome, null);
                 break;
 
             // TODO- see if there's an equivalent for STATE_ARMED ???
@@ -459,67 +598,56 @@ public class MainActivity extends AppCompatActivity
             // problems without this?
             // TODO- again this logic has probably already changed significantly
 
+            // When drone has valid GPS location. Used for displaying the drone's location
+            case AttributeEvent.GPS_POSITION:
+                Gps location = drone.getAttribute(AttributeType.GPS);
+                mapFragment.onDroneGPSUpdated(location.getPosition());
+                break;
+
             default:
                 break;
         }
     }
 
+    @Override
+    public void onDroneServiceInterrupted(String errorMsg) {
+        alertUser(errorMsg);
+    }
+
+    /**
+     * Displays a short notification-like message on the screen for the user to see
+     *
+     * @param message message to display
+     */
     protected void alertUser(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
     }
 
-    @Override
-    public void onDroneServiceInterrupted(String errorMsg) {
-
-    }
-
-    // Logic for the connect/arm/disarm button
-    // TODO- this is likely completely outdated and should be replaced by Will's updated logic
-    public void manageDrone() {
-        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
-
-        if (!this.drone.isConnected()) {    // Attempt to connect
-            alertUser("Connecting to drone...");
-
-            Bundle extraParams = new Bundle();
-            extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
-
-            ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
-                    extraParams,
-                    null);
-            this.drone.connect(connectionParams);
-
-        } else {
-            if (vehicleState.isFlying()) {  // Attempt to return home
-
-
-            } else if (!vehicleState.isArmed()) {   // Attempt to arm and take off
-
-                ArrayList<LatLong> waypoints = new ArrayList<LatLong>();
-                waypoints.add(new LatLong(37.873000, -122.303202));
-                waypoints.add(new LatLong(37.873000, -122.304113));
-                waypoints.add(new LatLong(37.873000, -122.305293));
-
-                MissionControl missionControl = new MissionControl(this.getApplicationContext(), drone);
-                missionControl.addWaypoints(waypoints);
-                missionControl.sendMissionToAPM();
-                alertUser("Drone mission sent");
-
-                final VehicleApi vehicleApi = new VehicleApi(drone);
-                vehicleApi.arm(true);
-                ControlApi.getApi(this.drone).takeoff(20, new SimpleCommandListener() {
-                    @Override
-                    public void onSuccess() {
-                        vehicleApi.setVehicleMode(VehicleMode.COPTER_AUTO);
-                    }
-                });
-            }
-        }
-    }
 
     public void onFlightModeSelected(View view) {
         VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
         // this.drone.changeVehicleMode(vehicleMode);
     }
 
+    /**
+     * Safely handles everything needed at start
+     */
+    @Override
+    public void onStart() {
+        super.onStart();
+        this.controlTower.connect(this);
+    }
+
+    /**
+     * Safely handles everything when app closes
+     */
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(this.drone.isConnected()) {
+            this.drone.disconnect();
+        }
+        this.controlTower.unregisterDrone(this.drone);
+        this.controlTower.disconnect();
+    }
 }

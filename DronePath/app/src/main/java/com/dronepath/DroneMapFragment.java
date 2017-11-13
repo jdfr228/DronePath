@@ -1,6 +1,7 @@
 package com.dronepath;
 
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -20,6 +21,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -50,6 +52,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     private Polyline polypath;
     private ArrayList<Marker> markerArray = new ArrayList<Marker>();
     private boolean spline_complete;
+    private Marker droneMarker = null;
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             android.Manifest.permission.ACCESS_FINE_LOCATION,
@@ -60,11 +63,13 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // Add wrapper view over map so that a drag listener can be implemented
         mOriginalView = super.onCreateView(inflater, container, savedInstanceState);
         mDroneMapWrapper = new DroneMapWrapper(getActivity());
         mDroneMapWrapper.addView(mOriginalView);
         spline_complete = false;
 
+        // Create GoogleApiClient instance in order to get location data
         mClient = new GoogleApiClient.Builder(getActivity()).addApi(LocationServices.API)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                     @Override
@@ -79,6 +84,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
                 })
                 .build();
 
+        // Get map and set location as enabled
         getMapAsync(this);
         return mDroneMapWrapper;
     }
@@ -87,6 +93,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        // Set location as enabled
         if (hasLocationPermission()) {
             mMap.setMyLocationEnabled(true);
         }
@@ -107,13 +114,13 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     }
 
     @Override
-    // If rotating phone it stops and restarts. Need to save all data and reapply on start.
     public void onStop() {
         super.onStop();
         mClient.disconnect();
     }
 
     @Override
+    // Request permissions from user
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
         switch (requestCode) {
@@ -126,12 +133,14 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         }
     }
 
+    // Checks if location permissions are allowed
     private boolean hasLocationPermission() {
         int result = ContextCompat
                 .checkSelfPermission(getActivity(), LOCATION_PERMISSIONS[0]);
         return result == PackageManager.PERMISSION_GRANTED;
     }
 
+    // Center map on current position
     private void updateUI() {
         if (mMap == null || mLastLocation == null)
             return;
@@ -141,6 +150,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         mMap.animateCamera(update);
     }
 
+    // Get last location update
     public void getLocation() {
         if(!mClient.isConnected())
             return;
@@ -148,18 +158,18 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         request.setNumUpdates(1);
         request.setInterval(0);
-       try {
-           LocationServices.FusedLocationApi
-                   .requestLocationUpdates(mClient, request, new LocationListener() {
-                       @Override
-                       public void onLocationChanged(Location location) {
-                           Log.i(TAG, "Location: " + location);
-                           mLastLocation = location;
-                           updateUI();
-                       }
-                   });
-       }
-       catch (SecurityException e){Log.i(TAG, "catch getLocation");}
+        try {
+            LocationServices.FusedLocationApi
+                    .requestLocationUpdates(mClient, request, new LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            Log.i(TAG, "Location: " + location);
+                            mLastLocation = location;
+                            updateUI();
+                        }
+                    });
+        }
+        catch (SecurityException e){Log.i(TAG, "catch getLocation");}
     }
 
     @Override
@@ -167,14 +177,18 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         return mOriginalView;
     }
 
+    // Return map
     public GoogleMap getMap(){
         return mMap;
     }
 
+    // Get default zoom level
     public int getDefaultZoom() { return mDefaultZoom; }
 
+    // Add a point to the polyline path
     public void addPoint (LatLng point){
         latLngPoints.add(point);
+        // Initialize the polyline if it hasn't been created
         if (polypath == null) {
             PolylineOptions flightPathOptions = new PolylineOptions();
             flightPathOptions.clickable(false);
@@ -184,8 +198,15 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         oldpolypath.add(point);
         polypath.setPoints(oldpolypath);
 
+        // If a point is added manually after a path has been set,
+        // it adds the new point to the path and recreates the waypoints
+        if (isSplineComplete()){
+            spline_complete = false;
+            convertToSpline();
+        }
     }
 
+    // Convert from Google Map API Latitude/Longitude to DroneKit API Latitude/Longitude
     public List<LatLong> convertToLatLong(List<LatLng> points){
         List<LatLong> new_points = new ArrayList<LatLong>();
         for (LatLng point : points){
@@ -195,6 +216,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         return new_points;
     }
 
+    // Convert from DroneKit API Latitude/Longitude to Google Map API Latitude/Longitude
     public List<LatLng> convertToLatLng(List<LatLong> points){
         List<LatLng> new_points = new ArrayList<LatLng>();
         for (LatLong point : points){
@@ -204,18 +226,18 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         return new_points;
     }
 
+    // Convert the polyline to a smaller set of waypoints that the drone can use
     public void convertToSpline(){
         if (isSplineComplete() || polypath == null)
             return;
-        List<LatLong> new_points = MathUtils.SplinePath.process(convertToLatLong(polypath.getPoints()));
+        //List<LatLong> new_points = MathUtils.SplinePath.process(convertToLatLong(polypath.getPoints()));
+        List<LatLong> new_points = convertToLatLong(polypath.getPoints());
         new_points = MathUtils.simplify(new_points, .0001);
-        //List<LatLong> new_points = convertToLatLong(polypath.getPoints());
-        //new_points = MathUtils.SplinePath.process(new_points);
         polypath.setPoints(convertToLatLng(new_points));
         for (LatLng point : polypath.getPoints()){
             Marker m = getMap().addMarker(new MarkerOptions().position(point));
             m.setDraggable(true);
-            m.setTitle("Point: " + point.latitude + "," + point.longitude);
+            m.setTitle(String.format("Point: %.4f , %.4f", point.latitude, point.longitude));
             markerArray.add(m);
         }
         spline_complete = true;
@@ -225,6 +247,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         return spline_complete;
     }
 
+    // Return waypoints in the DroneKit API format
     public List<LatLong> getLatLongWaypoints(){
         if (polypath == null) {
             return null;
@@ -233,9 +256,11 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         }
     }
 
+    // Clears map of points and markers
     public void clearPoints(){
         markerArray.clear();
-        polypath.remove();
+        if (polypath != null)
+            polypath.remove();
         polypath = null;
         getMap().clear();
         spline_complete = false;
@@ -247,22 +272,44 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     }
 
     @Override
+    // Stop map from moving so waypoint can be dragged
     public void onMarkerDragStart(Marker marker) {
         getMap().getUiSettings().setScrollGesturesEnabled(false);
     }
 
     @Override
+    // Move marker on screen
+    // Update the point text
+    // Redo polyline
     public void onMarkerDrag(Marker marker) {
         ArrayList<LatLng> points = new ArrayList<>();
         for (Marker m: markerArray){
-            m.setTitle("Point: " + m.getPosition().latitude + "," + m.getPosition().longitude);
+            m.setTitle(String.format("Point: %.4f , %.4f", m.getPosition().latitude, m.getPosition().longitude));
             points.add(m.getPosition());
         }
         polypath.setPoints(points);
     }
 
     @Override
+    // Allow map to move again once marker has already been dragged
     public void onMarkerDragEnd(Marker marker) {
         getMap().getUiSettings().setScrollGesturesEnabled(true);
+    }
+
+    // Create marker for drone position
+    public void onDroneConnected(LatLong drone){
+        MarkerOptions markerOptions = new MarkerOptions();
+
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+        markerOptions.draggable(false);
+        markerOptions.position(new LatLng(drone.getLatitude(), drone.getLongitude()));
+
+        droneMarker = getMap().addMarker(markerOptions);
+    }
+
+    // Update drone marker position
+    public void onDroneGPSUpdated(LatLong drone){
+        if (droneMarker != null)
+            droneMarker.setPosition(new LatLng(drone.getLatitude(), drone.getLongitude()));
     }
 }

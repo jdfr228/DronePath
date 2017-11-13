@@ -57,7 +57,7 @@ public class MissionApi extends Api {
 
     private final Drone drone;
 
-    private MissionApi(Drone drone){
+    public MissionApi(Drone drone){
         this.drone = drone;
     }
 
