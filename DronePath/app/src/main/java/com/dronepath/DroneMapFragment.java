@@ -263,6 +263,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
             polypath.remove();
         polypath = null;
         getMap().clear();
+        onDroneConnected(new LatLong(droneMarker.getPosition().latitude, droneMarker.getPosition().longitude));
         spline_complete = false;
     }
 
