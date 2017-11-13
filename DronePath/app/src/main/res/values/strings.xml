@@ -14,9 +14,23 @@
     <string name="addAsWaypoint">Add as a waypoint</string>
 
     <string name="flight_vars">Flight Variables</string>
-    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
     <string name="start">Start Flight</string>
 
     <string name="velocity">Velocity</string>
     <string name="altitude">Altitude</string>
+
+    <string name="pref_title_variable_parameters">Variable Parameters</string>
+    <string name="pref_title_connection_parameters">Connection Parameters</string>
+    <string name="pref_title_velocity_max">Set Maximum Velocity</string>
+    <string name="pref_title_altitude_max">Set Maximum Altitude</string>
+    <string name="pref_title_drone_port">Set Drone Connection UDP Port</string>
+
+    <string name="pref_title_other_settings">Other Settings</string>
+    <string name="pref_title_telemetry_button">View Telemetry Data</string>
+    <string name="pref_title_telemetry_latitude">Current Latitude</string>
+    <string name="pref_title_telemetry_longitude">Current Longitude</string>
+    <string name="pref_title_telemetry_velocity">Reported Velocity</string>
+    <string name="pref_title_telemetry_altitude">Reported Altitude</string>
+
 </resources>
