@@ -20,7 +20,7 @@ public class SettingsActivity extends AppCompatActivity {
         fragmentTransaction.add(R.id.fragment_container, prefs);
         fragmentTransaction.commit();
 
-        // Set up Listener (may be a better way to do it?) to update the Telemetry summaries
+        // TODO- Set up Listener (may be a better way to do it?) to update the Telemetry summaries
     }
 
     @Override

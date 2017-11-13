@@ -79,18 +79,10 @@ public class MainActivity extends AppCompatActivity
     private MissionControl missionControl;
     private final Handler handler = new Handler();
 
-    // TODO - since the variables are encapsulated in MainActivity, setters may not be needed?
-    public void setVelocity(double newVelocity) {
+    // FlightVarsDialogFragment.OnCompleteListener implementation (updates flight variables)
+    public void onFlightVarsDialogComplete(double newVelocity, double newAltitude) {
         velocity = newVelocity;
-    }
-    public void setAltitude(double newAltitude) {
         altitude = newAltitude;
-    }
-
-    // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
-    public void onFlightVarsDialogComplete(double velocity, double altitude) {
-        setVelocity(velocity);
-        setAltitude(altitude);
     }
 
     // GPSLocationDialogFragment.OnCompleteListener implementation (add GPS waypoint)
@@ -226,6 +218,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    // Handle when the user presses the Android back button
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -237,7 +230,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        // Inflate the menu; this adds items to the action bar if they are present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -295,12 +288,10 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case R.id.nav_connect:
-                // TODO Handle drone connection
                 connectToDrone();
                 break;
 
             case R.id.nav_start:
-                // TODO Handle starting the drone flight
                 // TODO- this and the connect button will likely be combined into 1 button on the main screen
                 startFlight();
                 break;
