@@ -347,6 +347,27 @@ public class MainActivity extends AppCompatActivity
     }
 
     // Logic for the appearance of the connect/arm/disarm button
+
+    /*
+        Animation logic (which is in the animateConnectArmFab method) should be sound, while the drone
+        logic, as I mention below, needs to be replaced.
+
+        The thought process here is that the USER_CLICKED case is triggered from the onClick function
+        above, and simply shows the loading icon and disables the user from pressing the button again
+        so they don't start throwing out arm commands before the drone has connected or anything.
+
+        The other cases, which will hide the loading icon and change the button icon/color to indicate
+        its new functionality, were intended to be triggered by the main drone event listener, hence
+        the case names like DRONE_CONNECTED, DRONE_ARMED, etc.
+
+        So basically the button would wait until whatever drone action it triggered was completed
+        successfully, and then change its appearance.
+
+        Currently called in onClick above- animateConnectArmFab(USER_CLICKED);
+            and onDroneEvent- animateConnectArmFab(DRONE_CONNECTED) (DRONE_DISCONNECTED) etc.
+
+     */
+
     public void animateConnectArmFab(int event) {
         // Accessor for swirling loading icon
         ProgressBar loadingIndicator = (ProgressBar) findViewById(R.id.loading_indicator);
@@ -436,6 +457,7 @@ public class MainActivity extends AppCompatActivity
             // TODO- see if there's an equivalent for STATE_ARMED ???
             // If arming takes a long time, allowing the user to cancel flight could cause
             // problems without this?
+            // TODO- again this logic has probably already changed significantly
 
             default:
                 break;
@@ -452,6 +474,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     // Logic for the connect/arm/disarm button
+    // TODO- this is likely completely outdated and should be replaced by Will's updated logic
     public void manageDrone() {
         State vehicleState = this.drone.getAttribute(AttributeType.STATE);
 
