@@ -1,13 +1,13 @@
 package com.dronepath;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,16 +19,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.app.DialogFragment;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.dronepath.mission.MissionControl;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
 import com.o3dr.android.client.ControlTower;
@@ -36,22 +35,21 @@ import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
-import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
+import com.o3dr.services.android.lib.drone.attribute.AttributeEventExtra;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
+import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Gps;
-import com.o3dr.services.android.lib.drone.property.Speed;
-import com.o3dr.services.android.lib.drone.property.Type;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
-import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
 import java.util.List;
-import java.util.ResourceBundle;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -61,13 +59,23 @@ public class MainActivity extends AppCompatActivity
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
-    public double maxVelocity = 10.0;
-    public double maxAltitude = 10.0;
+    public double maxVelocity = 18.351;   //
+    public double maxAltitude = 17.2;   // TODO- allow the user to change these in a menu
     public String savedLatitude = "";
     public String savedLongitude = "";
+    public boolean savedCheckBox = false;
+
+    // Drone state constants
+    int droneState = 0;
+    static final int USER_CLICKED = 0;
+    static final int DRONE_CONNECTED = 1;
+    static final int DRONE_DISCONNECTED = 2;
+    static final int DRONE_ARMED = 3;
+
+    Spinner modeSelector;
 
     // Floating Action Buttons
-    private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab;
+    private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab, connect_arm_fab;
     boolean isFabExpanded, isMapDrawable = false;
     private Animation open_fab,close_fab;
 
@@ -79,7 +87,8 @@ public class MainActivity extends AppCompatActivity
     private MissionControl missionControl;
     private final Handler handler = new Handler();
 
-    // FlightVarsDialogFragment.OnCompleteListener implementation (updates flight variables)
+    // Dialog Listeners
+    // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
     public void onFlightVarsDialogComplete(double newVelocity, double newAltitude) {
         velocity = newVelocity;
         altitude = newAltitude;
@@ -102,10 +111,12 @@ public class MainActivity extends AppCompatActivity
             mapFragment.getMap().animateCamera(update);
         }
 
-        // Save entered Latitude and Longitude for the next time the Dialog opens
+        // Save entered Latitude/Longitude and CheckBox state for the next time the Dialog opens
         savedLatitude = Double.toString(latitude);
         savedLongitude = Double.toString(longitude);
+        savedCheckBox = isWaypoint;
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,11 +168,13 @@ public class MainActivity extends AppCompatActivity
         place_fab = (FloatingActionButton) findViewById(R.id.place_fab);
         place_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         delete_fab = (FloatingActionButton) findViewById(R.id.delete_fab);
+        connect_arm_fab = (FloatingActionButton) findViewById(R.id.connect_arm_fab);
         delete_fab.setRippleColor(getResources().getColor(R.color.colorPrimary));
         menu_fab.setOnClickListener(this);
         edit_fab.setOnClickListener(this);
         place_fab.setOnClickListener(this);
         delete_fab.setOnClickListener(this);
+        connect_arm_fab.setOnClickListener(this);
         open_fab = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.open_fab);
         close_fab = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.close_fab);
 
@@ -212,6 +225,20 @@ public class MainActivity extends AppCompatActivity
                     isMapDrawable = false;
                     mapFragment.getMap().getUiSettings().setScrollGesturesEnabled(true);
                     edit_fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorAccent));
+                }
+                break;
+            case R.id.connect_arm_fab:
+                if(droneState == USER_CLICKED) {
+                    animateConnectArmFab(droneState);
+                    connectToDrone();
+                }
+
+                else if (droneState == DRONE_CONNECTED) {
+                    startFlight();
+                }
+
+                else if (droneState == DRONE_ARMED) {
+                    returnHome();
                 }
                 break;
         }
@@ -267,6 +294,7 @@ public class MainActivity extends AppCompatActivity
                 Bundle GPSargs = new Bundle();
                 GPSargs.putString("savedLatitude", savedLatitude);
                 GPSargs.putString("savedLongitude", savedLongitude);
+                GPSargs.putBoolean("savedCheckBox", savedCheckBox);
                 gpsDialog.setArguments(GPSargs);
 
                 // Display the dialog to the user
@@ -287,13 +315,9 @@ public class MainActivity extends AppCompatActivity
                 flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
                 break;
 
+            // TODO Unused
             case R.id.nav_connect:
-                connectToDrone();
-                break;
-
-            case R.id.nav_start:
-                // TODO- this and the connect button will likely be combined into 1 button on the main screen
-                startFlight();
+                // connectToDrone();
                 break;
         }
 
@@ -326,6 +350,82 @@ public class MainActivity extends AppCompatActivity
             edit_fab.setClickable(true);
             place_fab.setClickable(true);
             delete_fab.setClickable(true);
+        }
+    }
+
+    // Logic for the appearance of the connect/arm/disarm button
+
+    /*
+        Animation logic (which is in the animateConnectArmFab method) should be sound, while the drone
+        logic, as I mention below, needs to be replaced.
+
+        The thought process here is that the USER_CLICKED case is triggered from the onClick function
+        above, and simply shows the loading icon and disables the user from pressing the button again
+        so they don't start throwing out arm commands before the drone has connected or anything.
+
+        The other cases, which will hide the loading icon and change the button icon/color to indicate
+        its new functionality, were intended to be triggered by the main drone event listener, hence
+        the case names like DRONE_CONNECTED, DRONE_ARMED, etc.
+
+        So basically the button would wait until whatever drone action it triggered was completed
+        successfully, and then change its appearance.
+
+        Currently called in onClick above- animateConnectArmFab(USER_CLICKED);
+            and onDroneEvent- animateConnectArmFab(DRONE_CONNECTED) (DRONE_DISCONNECTED) etc.
+
+     */
+
+    public void animateConnectArmFab(int event) {
+        // Accessor for swirling loading icon
+        ProgressBar loadingIndicator = (ProgressBar) findViewById(R.id.loading_indicator);
+
+        switch (event) {
+            case USER_CLICKED:  // Show loading icon
+                // Remove any icons
+                connect_arm_fab.setImageResource(R.drawable.empty_drawable);
+
+                // Show loading indicator
+                loadingIndicator.setVisibility(View.VISIBLE);
+
+                // Make the button unclickable
+                connect_arm_fab.setClickable(false);
+                break;
+
+            case DRONE_CONNECTED:   // Show arm icon
+                // Hide loading indicator
+                loadingIndicator.setVisibility(View.INVISIBLE);
+
+                // Change icon
+                connect_arm_fab.setImageResource(R.drawable.ic_menu_send);
+
+                // Change button color
+                connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
+                        (ContextCompat.getColor(this, android.R.color.holo_green_dark)));
+
+                // Make the button clickable again
+                connect_arm_fab.setClickable(true);
+                break;
+
+            case DRONE_DISCONNECTED:    // Show connect icon
+                loadingIndicator.setVisibility(View.INVISIBLE);
+                connect_arm_fab.setImageResource(R.drawable.quantum_ic_bigtop_updates_white_24);
+                connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
+                        (ContextCompat.getColor(this, R.color.colorAccent)));
+                connect_arm_fab.setClickable(true);
+
+                droneState = USER_CLICKED;
+                break;
+
+            case DRONE_ARMED:   // Show cancel/return icon
+                loadingIndicator.setVisibility(View.INVISIBLE);
+                connect_arm_fab.setImageResource(R.drawable.cast_ic_notification_disconnect);
+                connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
+                        (ContextCompat.getColor(this, android.R.color.holo_red_dark)));
+                connect_arm_fab.setClickable(true);
+                break;
+
+            // case DRONE_RETURNED_HOME:
+            //  break;
         }
     }
 
@@ -370,6 +470,40 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onSuccess() {
                 alertUser("Arming successful");
+                droneState = DRONE_ARMED;
+                animateConnectArmFab(droneState);
+
+                // Drone take off
+                ControlApi.getApi(drone).takeoff(1, new AbstractCommandListener() {
+                    @Override
+                    public void onSuccess() {
+                        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new AbstractCommandListener() {
+                            @Override
+                            public void onSuccess() {
+                            }
+
+                            @Override
+                            public void onError(int executionError) {
+                                alertUser("Drone auto mode failed: " + executionError);
+                            }
+
+                            @Override
+                            public void onTimeout() {
+                                alertUser("Drone auto mode timed out");
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onError(int executionError) {
+                        alertUser("Drone failed to take off: " + executionError);
+                    }
+
+                    @Override
+                    public void onTimeout() {
+                        alertUser("Drone take off timed out");
+                    }
+                });
             }
 
             @Override
@@ -382,22 +516,26 @@ public class MainActivity extends AppCompatActivity
                 alertUser("Arming timed out");
             }
         });
+    }
 
-        // Drone take off
-        ControlApi.getApi(drone).takeoff(10, new AbstractCommandListener() {
+
+    private void returnHome() {
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_RTL, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
-                VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO);
+                alertUser("Drone returning home");
+                droneState = DRONE_DISCONNECTED;
+                animateConnectArmFab(droneState);
             }
 
             @Override
             public void onError(int executionError) {
-                alertUser("Drone failed to take off: " + executionError);
+                alertUser("Drone returning home failed: " + executionError);
             }
 
             @Override
             public void onTimeout() {
-                alertUser("Drone take off timed out");
+                alertUser("Drone returning home timed out");
             }
         });
     }
@@ -430,13 +568,35 @@ public class MainActivity extends AppCompatActivity
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
+                //updateConnectedButton(this.drone.isConnected());
+                droneState = DRONE_CONNECTED;
+                animateConnectArmFab(droneState);
+
                 LatLong dummy = new LatLong(0,0);
                 mapFragment.onDroneConnected(dummy);
+
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
                 alertUser("Drone Disconnected");
+                //updateConnectedButton(this.drone.isConnected());
+                animateConnectArmFab(DRONE_DISCONNECTED);
                 break;
+
+            // TODO Make this more concise
+            case AttributeEvent.STATE_ARMING:
+                alertUser("Arming Drone and taking off...");
+//                Gps locationHome = drone.getAttribute(AttributeType.GPS);
+//                LatLongAlt droneHome = new LatLongAlt(locationHome.getPosition(), 0);
+//                Altitude altitude = drone.getAttribute(AttributeType.ALTITUDE);
+//                droneHome.setAltitude(altitude.getAltitude());
+//                VehicleApi.getApi(drone).setVehicleHome(droneHome, null);
+                break;
+
+            // TODO- see if there's an equivalent for STATE_ARMED ???
+            // If arming takes a long time, allowing the user to cancel flight could cause
+            // problems without this?
+            // TODO- again this logic has probably already changed significantly
 
             // When drone has valid GPS location. Used for displaying the drone's location
             case AttributeEvent.GPS_POSITION:
@@ -461,6 +621,12 @@ public class MainActivity extends AppCompatActivity
      */
     protected void alertUser(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+
+    public void onFlightModeSelected(View view) {
+        VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
+        // this.drone.changeVehicleMode(vehicleMode);
     }
 
     /**

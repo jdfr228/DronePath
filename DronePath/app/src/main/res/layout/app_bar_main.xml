@@ -64,6 +64,33 @@
         app:pressedTranslationZ="12dp"
         android:layout_margin="@dimen/fab_margin"
         android:src="@mipmap/ic_more_vert_white_24dp" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_marginBottom="@dimen/fab_margin">
+
+        <ProgressBar
+            android:id="@+id/loading_indicator"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:elevation="7dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#FFFFFF"
+            android:visibility="invisible" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/connect_arm_fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccent"
+            android:src="@drawable/quantum_ic_bigtop_updates_white_24"
+            app:elevation="6dp" />
+    </RelativeLayout>
+
     <!--<android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
