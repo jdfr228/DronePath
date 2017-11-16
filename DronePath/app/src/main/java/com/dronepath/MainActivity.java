@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity
 
     // Logic for the appearance of the connect/arm/disarm button
 
-    /*
+    /**
         Animation logic (which is in the animateConnectArmFab method) should be sound, while the drone
         logic, as I mention below, needs to be replaced.
 
@@ -374,7 +374,6 @@ public class MainActivity extends AppCompatActivity
             and onDroneEvent- animateConnectArmFab(DRONE_CONNECTED) (DRONE_DISCONNECTED) etc.
 
      */
-
     public void animateConnectArmFab(int event) {
         // Accessor for swirling loading icon
         ProgressBar loadingIndicator = (ProgressBar) findViewById(R.id.loading_indicator);
@@ -433,6 +432,7 @@ public class MainActivity extends AppCompatActivity
      * Connects to drone through UDP protocol
      */
     private void connectToDrone() {
+        alertUser("Connecting to drone...");
         Bundle extraParams = new Bundle();
         extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
 
@@ -575,6 +575,19 @@ public class MainActivity extends AppCompatActivity
                 LatLong dummy = new LatLong(0,0);
                 mapFragment.onDroneConnected(dummy);
 
+                // Move the Map to the drone's location
+                // Get drone Location
+                Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+                LatLong vehicleLocation = droneGps.getPosition();
+
+                // Convert drone LatLong into Map LatLng
+                LatLng updateLocation = new LatLng(vehicleLocation.getLatitude(),
+                        vehicleLocation.getLongitude());
+
+                // Update Map
+                CameraUpdate update = CameraUpdateFactory.newLatLngZoom(updateLocation,
+                        mapFragment.getDefaultZoom());
+                mapFragment.getMap().animateCamera(update);
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
