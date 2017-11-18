@@ -85,6 +85,9 @@ public class MissionControl {
     public void addWaypoints(List<LatLong> points) {
         float alt = 60F;
 
+        // Clear any previously saved waypoints
+        missionItems.clear();
+
         for (LatLong point : points) {
             Waypoint waypoint = new Waypoint();
             waypoint.setCoordinate(new LatLongAlt(point.getLatitude(), point.getLongitude(), alt));

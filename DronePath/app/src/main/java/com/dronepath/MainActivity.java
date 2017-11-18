@@ -37,19 +37,16 @@ import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
-import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
-import com.o3dr.services.android.lib.drone.attribute.AttributeEventExtra;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
-import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Gps;
+import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
 import java.util.List;
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -66,11 +63,11 @@ public class MainActivity extends AppCompatActivity
     public boolean savedCheckBox = false;
 
     // Drone state constants
-    int droneState = 0;
     static final int USER_CLICKED = 0;
     static final int DRONE_CONNECTED = 1;
     static final int DRONE_DISCONNECTED = 2;
     static final int DRONE_ARMED = 3;
+    int droneState = DRONE_DISCONNECTED;
 
     Spinner modeSelector;
 
@@ -193,7 +190,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    // Handles input when any FAB get pressed
+    // Handles input when any FAB button is pressed
     public void onClick(View v) {
         int id = v.getId();
         switch (id){
@@ -228,18 +225,13 @@ public class MainActivity extends AppCompatActivity
                 }
                 break;
             case R.id.connect_arm_fab:
-                if(droneState == USER_CLICKED) {
-                    animateConnectArmFab(droneState);
-                    connectToDrone();
-                }
+                animateConnectArmFab(USER_CLICKED);     // Show loading icon & disable add. clicking
 
-                else if (droneState == DRONE_CONNECTED) {
-                    startFlight();
-                }
+                // Determine action for the button based on the state of the drone
+                if (droneState == DRONE_DISCONNECTED) { connectToDrone(); }
+                else if (droneState == DRONE_CONNECTED) { startFlight(); }
+                else if (droneState == DRONE_ARMED) { returnHome(); }
 
-                else if (droneState == DRONE_ARMED) {
-                    returnHome();
-                }
                 break;
         }
     }
@@ -315,7 +307,7 @@ public class MainActivity extends AppCompatActivity
                 flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
                 break;
 
-            // TODO Unused
+            // TODO- change to disconnect button
             case R.id.nav_connect:
                 // connectToDrone();
                 break;
@@ -354,7 +346,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     // Logic for the appearance of the connect/arm/disarm button
-
     /**
         Animation logic (which is in the animateConnectArmFab method) should be sound, while the drone
         logic, as I mention below, needs to be replaced.
@@ -380,6 +371,7 @@ public class MainActivity extends AppCompatActivity
 
         switch (event) {
             case USER_CLICKED:  // Show loading icon
+                Log.d("myTag", "User clicked button");
                 // Remove any icons
                 connect_arm_fab.setImageResource(R.drawable.empty_drawable);
 
@@ -391,6 +383,7 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case DRONE_CONNECTED:   // Show arm icon
+                Log.d("myTag", "Drone icon updated to arm icon");
                 // Hide loading indicator
                 loadingIndicator.setVisibility(View.INVISIBLE);
 
@@ -406,16 +399,16 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case DRONE_DISCONNECTED:    // Show connect icon
+                Log.d("myTag", "Drone icon updated to connect icon");
                 loadingIndicator.setVisibility(View.INVISIBLE);
                 connect_arm_fab.setImageResource(R.drawable.quantum_ic_bigtop_updates_white_24);
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, R.color.colorAccent)));
                 connect_arm_fab.setClickable(true);
-
-                droneState = USER_CLICKED;
                 break;
 
             case DRONE_ARMED:   // Show cancel/return icon
+                Log.d("myTag", "Drone icon updated to return/cancel icon");
                 loadingIndicator.setVisibility(View.INVISIBLE);
                 connect_arm_fab.setImageResource(R.drawable.cast_ic_notification_disconnect);
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
@@ -432,6 +425,7 @@ public class MainActivity extends AppCompatActivity
      * Connects to drone through UDP protocol
      */
     private void connectToDrone() {
+        Log.d("myTag", "connectToDrone() called");
         alertUser("Connecting to drone...");
         Bundle extraParams = new Bundle();
         extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, 14550); // Set default port to 14550
@@ -439,16 +433,35 @@ public class MainActivity extends AppCompatActivity
         ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
                 extraParams,
                 null);
+
         this.drone.connect(connectionParams);
+
+        // An attempt at implementing a timeout for drone connection
+
+        /*this.drone.connect(connectionParams, new LinkListener() {
+            @Override
+            public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus) {
+                Log.d("myTag", connectionStatus.getStatusCode());
+                switch (connectionStatus.getStatusCode()) {
+                    case LinkConnectionStatus.FAILED:
+                        break;
+
+                }
+            }
+        });*/
     }
 
     /**
      * Checks if drone is connected, then sends mission, arm drone, and take off!
+     * Pre condition: droneState = DRONE_CONNECTED
      */
     private void startFlight() {
+        Log.d("myTag", "startFlight() called");
         // Checks of a drone is connected
         if(!drone.isConnected()) {
             alertUser("Drone is not connected");
+            droneState = DRONE_DISCONNECTED;
+            animateConnectArmFab(droneState);
             return;
         }
 
@@ -458,84 +471,152 @@ public class MainActivity extends AppCompatActivity
 
             missionControl.addWaypoints(mapFragment.getLatLongWaypoints());
             missionControl.sendMissionToAPM();
+            Log.d("myTag", "waypoints sent to APM");
         }
 
         else {
+            Log.d("myTag", "no waypoints drawn");
             alertUser("No waypoints drawn");
+            animateConnectArmFab(droneState);
             return;
         }
 
-        // Arming drone
-        VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
+        final State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        // Change drone vehicle mode back to default
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_LOITER, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
-                alertUser("Arming successful");
-                droneState = DRONE_ARMED;
-                animateConnectArmFab(droneState);
+                Log.d("myTag", "Drone vehicle mode changed to loiter");
 
-                // Drone take off
-                ControlApi.getApi(drone).takeoff(1, new AbstractCommandListener() {
+                // Arm drone if necessary
+                if (!vehicleState.isArmed()) {
+                    alertUser("Arming drone...");
+                    VehicleApi.getApi(drone).arm(true, false, new AbstractCommandListener() {
+                        @Override
+                        public void onSuccess() {
+                            Log.d("myTag", "Drone armed");
+                            alertUser("Arming successful");
+                            droneState = DRONE_ARMED;
+                            //animateConnectArmFab(droneState); - wait to allow the user to click again
+
+                            takeoff();
+                        }
+
+                        @Override
+                        public void onError(int executionError) {
+                            Log.d("myTag", "Drone arming error");
+                            alertUser("Arming not successful: " + executionError);
+                            droneState = DRONE_CONNECTED;
+                            animateConnectArmFab(droneState);
+                        }
+
+                        @Override
+                        public void onTimeout() {
+                            Log.d("myTag", "Drone arming timeout");
+                            alertUser("Arming timed out");
+                            droneState = DRONE_CONNECTED;
+                            animateConnectArmFab(droneState);
+                        }
+                    });
+                }
+
+                // Take off standalone if the drone is already armed
+                else if (!vehicleState.isFlying()) {
+                    takeoff();
+                }
+            }
+
+            @Override
+            public void onError(int executionError) {
+                Log.d("myTag", "Drone vehicle mode error");
+                alertUser("Drone loiter mode failed: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                Log.d("myTag", "Drone vehicle mode timeout");
+                alertUser("Drone loiter mode timed out");
+            }
+        });
+    }
+
+    private void takeoff() {
+        Log.d("myTag", "takeoff() called");
+        alertUser("Drone taking off...");
+        ControlApi.getApi(drone).takeoff(1, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new AbstractCommandListener() {
                     @Override
                     public void onSuccess() {
-                        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new AbstractCommandListener() {
-                            @Override
-                            public void onSuccess() {
-                            }
-
-                            @Override
-                            public void onError(int executionError) {
-                                alertUser("Drone auto mode failed: " + executionError);
-                            }
-
-                            @Override
-                            public void onTimeout() {
-                                alertUser("Drone auto mode timed out");
-                            }
-                        });
+                        Log.d("myTag", "Drone Flying");
+                        alertUser("Takeoff successful");
+                        droneState = DRONE_ARMED;
+                        animateConnectArmFab(droneState);
                     }
 
                     @Override
                     public void onError(int executionError) {
-                        alertUser("Drone failed to take off: " + executionError);
+                        Log.d("myTag", "Drone vehicle mode error");
+                        alertUser("Drone auto mode failed: " + executionError);
+                        droneState = DRONE_CONNECTED;
+                        animateConnectArmFab(droneState);
                     }
 
                     @Override
                     public void onTimeout() {
-                        alertUser("Drone take off timed out");
+                        Log.d("myTag", "Drone vehicle mode timeout");
+                        alertUser("Drone auto mode timed out");
+                        droneState = DRONE_CONNECTED;
+                        animateConnectArmFab(droneState);
                     }
                 });
             }
 
             @Override
             public void onError(int executionError) {
-                alertUser("Arming not successful: " + executionError);
+                Log.d("myTag", "Drone flight error");
+                alertUser("Drone failed to take off: " + executionError);
+                droneState = DRONE_CONNECTED;
+                animateConnectArmFab(droneState);
             }
 
             @Override
             public void onTimeout() {
-                alertUser("Arming timed out");
+                Log.d("myTag", "Drone flight timeout");
+                alertUser("Drone take off timed out");
+                droneState = DRONE_CONNECTED;
+                animateConnectArmFab(droneState);
             }
         });
     }
-
 
     private void returnHome() {
         VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_RTL, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
+                Log.d("myTag", "Drone returning home");
                 alertUser("Drone returning home");
-                droneState = DRONE_DISCONNECTED;
+                droneState = DRONE_CONNECTED;
                 animateConnectArmFab(droneState);
             }
 
             @Override
+            // TODO- drone may not actually still be armed if this error is thrown?
             public void onError(int executionError) {
+                Log.d("myTag", "Drone returning home error");
                 alertUser("Drone returning home failed: " + executionError);
+                droneState = DRONE_ARMED;
+                animateConnectArmFab(droneState);
             }
 
             @Override
             public void onTimeout() {
+                Log.d("myTag", "Drone returning home timeout");
                 alertUser("Drone returning home timed out");
+                droneState = DRONE_ARMED;
+                animateConnectArmFab(droneState);
             }
         });
     }
@@ -567,8 +648,8 @@ public class MainActivity extends AppCompatActivity
     public void onDroneEvent(String event, Bundle extras) {
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
+                Log.d("myTag", "Drone connected");
                 alertUser("Drone Connected");
-                //updateConnectedButton(this.drone.isConnected());
                 droneState = DRONE_CONNECTED;
                 animateConnectArmFab(droneState);
 
@@ -576,7 +657,6 @@ public class MainActivity extends AppCompatActivity
                 mapFragment.onDroneConnected(dummy);
 
                 // Move the Map to the drone's location
-                // Get drone Location
                 Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
                 LatLong vehicleLocation = droneGps.getPosition();
 
@@ -591,25 +671,23 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
+                Log.d("myTag", "Drone disconnected");
                 alertUser("Drone Disconnected");
-                //updateConnectedButton(this.drone.isConnected());
-                animateConnectArmFab(DRONE_DISCONNECTED);
+                droneState = DRONE_DISCONNECTED;
+                animateConnectArmFab(droneState);
                 break;
 
             // TODO Make this more concise
+            // Note- this listener is also triggered when the drone has landed and is disarming
             case AttributeEvent.STATE_ARMING:
-                alertUser("Arming Drone and taking off...");
+                Log.d("myTag", "Drone arming (listener)");
+                //alertUser("Arming Drone and taking off...");
 //                Gps locationHome = drone.getAttribute(AttributeType.GPS);
 //                LatLongAlt droneHome = new LatLongAlt(locationHome.getPosition(), 0);
 //                Altitude altitude = drone.getAttribute(AttributeType.ALTITUDE);
 //                droneHome.setAltitude(altitude.getAltitude());
 //                VehicleApi.getApi(drone).setVehicleHome(droneHome, null);
                 break;
-
-            // TODO- see if there's an equivalent for STATE_ARMED ???
-            // If arming takes a long time, allowing the user to cancel flight could cause
-            // problems without this?
-            // TODO- again this logic has probably already changed significantly
 
             // When drone has valid GPS location. Used for displaying the drone's location
             case AttributeEvent.GPS_POSITION:
@@ -623,8 +701,12 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    // TODO- find if this was interpreted correctly (triggers once, drone no longer connected)
     public void onDroneServiceInterrupted(String errorMsg) {
+        Log.d("myTag", "onDroneServiceInterrupted triggered");
         alertUser(errorMsg);
+        droneState = DRONE_DISCONNECTED;
+        animateConnectArmFab(droneState);
     }
 
     /**
@@ -633,9 +715,10 @@ public class MainActivity extends AppCompatActivity
      * @param message message to display
      */
     protected void alertUser(String message) {
+        // TODO- the user can spam a giant queue of these by tapping a button multiple times
+        //          is there a way to limit the number shown?
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
     }
-
 
     public void onFlightModeSelected(View view) {
         VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
