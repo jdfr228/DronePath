@@ -497,7 +497,7 @@ public class MainActivity extends AppCompatActivity
         final State vehicleState = this.drone.getAttribute(AttributeType.STATE);
 
         // Change drone vehicle mode back to default
-        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_LOITER, new AbstractCommandListener() {
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_STABILIZE, new AbstractCommandListener() {
             @Override
             public void onSuccess() {
                 Log.d("myTag", "Drone vehicle mode changed to loiter");
@@ -682,6 +682,14 @@ public class MainActivity extends AppCompatActivity
             // Note- this listener is also triggered when the drone has landed and is disarming
             case AttributeEvent.STATE_ARMING:
                 Log.d("myTag", "Drone arming (listener)");
+                State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+                if (!vehicleState.isArmed()) {
+                    // Drone has landed
+                    Log.d("myTag", "Drone landed");
+                    alertUser("Drone successfully landed");
+                    droneState = DRONE_CONNECTED;
+                    animateConnectArmFab(droneState);
+                }
                 //alertUser("Arming Drone and taking off...");
 //                Gps locationHome = drone.getAttribute(AttributeType.GPS);
 //                LatLongAlt droneHome = new LatLongAlt(locationHome.getPosition(), 0);
@@ -690,13 +698,19 @@ public class MainActivity extends AppCompatActivity
 //                VehicleApi.getApi(drone).setVehicleHome(droneHome, null);
                 break;
 
+            case AttributeEvent.STATE_VEHICLE_MODE:
+                vehicleState = this.drone.getAttribute(AttributeType.STATE);
+                Log.d("myTag", "Current vehicle mode is now: "
+                        + vehicleState.getVehicleMode());
+                break;
+
             // When drone has valid GPS location. Used for displaying the drone's location
             case AttributeEvent.GPS_POSITION:
                 Gps location = drone.getAttribute(AttributeType.GPS);
                 mapFragment.onDroneGPSUpdated(location.getPosition());
 
                 // Move the Map to the drone's location on initial connect
-                // Placed in GPS_POSITION to avoid a race condition
+                // Placed in GPS_POSITION to ensure a Location is available
                 if (updateMapFlag) {
                     Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
                     LatLong vehicleLocation = droneGps.getPosition();
