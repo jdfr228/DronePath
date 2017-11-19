@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity
     private Animation open_fab,close_fab;
 
     private DroneMapFragment mapFragment;
+    private boolean updateMapFlag = true;
 
     // Drone related stuff
     private Drone drone;
@@ -307,9 +308,12 @@ public class MainActivity extends AppCompatActivity
                 flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
                 break;
 
-            // TODO- change to disconnect button
-            case R.id.nav_connect:
-                // connectToDrone();
+            case R.id.nav_disconnect:
+                if (drone.isConnected()) {
+                    disconnectDrone();
+                } else {
+                    alertUser("No drone is connected");
+                }
                 break;
         }
 
@@ -449,6 +453,15 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });*/
+    }
+
+    private void disconnectDrone() {
+        alertUser("Disconnecting from drone...");
+        animateConnectArmFab(USER_CLICKED);
+        this.drone.disconnect();
+
+        // Remove drone GPS waypoint
+        mapFragment.clearDronePoint();
     }
 
     /**
@@ -655,19 +668,6 @@ public class MainActivity extends AppCompatActivity
 
                 LatLong dummy = new LatLong(0,0);
                 mapFragment.onDroneConnected(dummy);
-
-                // Move the Map to the drone's location
-                Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
-                LatLong vehicleLocation = droneGps.getPosition();
-
-                // Convert drone LatLong into Map LatLng
-                LatLng updateLocation = new LatLng(vehicleLocation.getLatitude(),
-                        vehicleLocation.getLongitude());
-
-                // Update Map
-                CameraUpdate update = CameraUpdateFactory.newLatLngZoom(updateLocation,
-                        mapFragment.getDefaultZoom());
-                mapFragment.getMap().animateCamera(update);
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -675,6 +675,7 @@ public class MainActivity extends AppCompatActivity
                 alertUser("Drone Disconnected");
                 droneState = DRONE_DISCONNECTED;
                 animateConnectArmFab(droneState);
+                updateMapFlag = true;   // Update the map on the next drone connect
                 break;
 
             // TODO Make this more concise
@@ -693,6 +694,23 @@ public class MainActivity extends AppCompatActivity
             case AttributeEvent.GPS_POSITION:
                 Gps location = drone.getAttribute(AttributeType.GPS);
                 mapFragment.onDroneGPSUpdated(location.getPosition());
+
+                // Move the Map to the drone's location on initial connect
+                // Placed in GPS_POSITION to avoid a race condition
+                if (updateMapFlag) {
+                    Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+                    LatLong vehicleLocation = droneGps.getPosition();
+
+                    // Convert drone LatLong into Map LatLng
+                    LatLng updateLocation = new LatLng(vehicleLocation.getLatitude(),
+                            vehicleLocation.getLongitude());
+
+                    // Update Map
+                    CameraUpdate update = CameraUpdateFactory.newLatLngZoom(updateLocation,
+                            mapFragment.getDefaultZoom());
+                    mapFragment.getMap().animateCamera(update);
+                    updateMapFlag = false;
+                }
                 break;
 
             default:

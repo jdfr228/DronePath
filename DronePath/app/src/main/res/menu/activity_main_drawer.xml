@@ -13,8 +13,8 @@
             android:icon="@drawable/ic_menu_manage"
             android:title="@string/flight_vars" />
         <item
-            android:id="@+id/nav_connect"
-            android:icon="@drawable/quantum_ic_bigtop_updates_white_24"
+            android:id="@+id/nav_disconnect"
+            android:icon="@mipmap/ic_action_signal_wifi_off"
             android:title="@string/disconnect" />
     </group>
 

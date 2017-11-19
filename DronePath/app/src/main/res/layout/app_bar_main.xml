@@ -26,13 +26,13 @@
         android:id="@+id/edit_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="230dp"
         android:layout_gravity="bottom|end"
+        android:layout_marginBottom="230dp"
         android:layout_marginRight="@dimen/fab_margin"
+        android:src="@mipmap/ic_edit_white_24dp"
         android:visibility="invisible"
         app:elevation="6dp"
-        app:pressedTranslationZ="12dp"
-        android:src="@mipmap/ic_edit_white_24dp" />
+        app:pressedTranslationZ="12dp" />
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/place_fab"
         android:layout_width="wrap_content"
@@ -75,8 +75,8 @@
             android:id="@+id/loading_indicator"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_marginStart="5dp"
-            android:layout_marginTop="5dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="12dp"
             android:elevation="7dp"
             android:indeterminate="true"
             android:indeterminateTint="#FFFFFF"

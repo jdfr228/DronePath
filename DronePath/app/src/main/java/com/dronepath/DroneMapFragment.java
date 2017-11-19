@@ -268,6 +268,11 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         spline_complete = false;
     }
 
+    // Clear just the drone map marker
+    public void clearDronePoint() {
+        // TODO- *properly* remove just the drone map marker
+        droneMarker.setVisible(false);
+    }
 
     public void setOnDragListener(DroneMapWrapper.OnDragListener onDragListener) {
         mDroneMapWrapper.setOnDragListener(onDragListener);
@@ -307,6 +312,7 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         markerOptions.position(new LatLng(drone.getLatitude(), drone.getLongitude()));
 
         droneMarker = getMap().addMarker(markerOptions);
+        droneMarker.setVisible(true);
     }
 
     // Update drone marker position
