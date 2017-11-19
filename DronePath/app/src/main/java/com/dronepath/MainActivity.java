@@ -85,6 +85,8 @@ public class MainActivity extends AppCompatActivity
     private MissionControl missionControl;
     private final Handler handler = new Handler();
 
+    private Toast toast;
+
     // Dialog Listeners
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
     public void onFlightVarsDialogComplete(double newVelocity, double newAltitude) {
@@ -188,6 +190,8 @@ public class MainActivity extends AppCompatActivity
         this.controlTower = new ControlTower(getApplicationContext());
         this.drone = new Drone(getApplicationContext());
         this.missionControl = new MissionControl(getApplicationContext(), drone);
+
+        toast = Toast.makeText(getApplicationContext(), "", Toast.LENGTH_LONG);
     }
 
     @Override
@@ -683,8 +687,8 @@ public class MainActivity extends AppCompatActivity
             case AttributeEvent.STATE_ARMING:
                 Log.d("myTag", "Drone arming (listener)");
                 State vehicleState = this.drone.getAttribute(AttributeType.STATE);
-                if (!vehicleState.isArmed()) {
-                    // Drone has landed
+
+                if (!vehicleState.isArmed()) {                      // Drone has landed
                     Log.d("myTag", "Drone landed");
                     alertUser("Drone successfully landed");
                     droneState = DRONE_CONNECTED;
@@ -747,9 +751,8 @@ public class MainActivity extends AppCompatActivity
      * @param message message to display
      */
     protected void alertUser(String message) {
-        // TODO- the user can spam a giant queue of these by tapping a button multiple times
-        //          is there a way to limit the number shown?
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+        toast.setText(message);
+        toast.show();
     }
 
     public void onFlightModeSelected(View view) {
