@@ -1,21 +1,13 @@
 package com.dronepath.mission;
 
-import android.app.Application;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.auth.GoogleAuthUtil;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.coordinate.LatLongAlt;
-import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
-import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.mission.Mission;
 import com.o3dr.services.android.lib.drone.mission.item.MissionItem;
 import com.o3dr.services.android.lib.drone.mission.item.command.ReturnToLaunch;
@@ -95,6 +87,13 @@ public class MissionControl {
         }
 
         notifyMissionUpdate();
+    }
+
+    // Checks to see if the next waypoint is the final one on the mission or not
+    public boolean isFinalWaypoint(int nextWaypoint) {
+        if (nextWaypoint == missionItems.size() + 1) {
+            return true;
+        } else { return false; }
     }
 
     public void notifyMissionUpdate() {

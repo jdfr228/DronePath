@@ -33,6 +33,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.TowerListener;
@@ -85,6 +86,7 @@ public class MainActivity extends AppCompatActivity
     private MissionControl missionControl;
     private final Handler handler = new Handler();
 
+    private int nextWaypoint = 0;
     private Toast toast;
 
     // Dialog Listeners
@@ -614,9 +616,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onSuccess() {
                 Log.d("myTag", "Drone returning home");
-                alertUser("Drone returning home");
-                droneState = DRONE_CONNECTED;
-                animateConnectArmFab(droneState);
+                alertUser("Drone returning home...");
             }
 
             @Override
@@ -674,6 +674,20 @@ public class MainActivity extends AppCompatActivity
                 mapFragment.onDroneConnected(dummy);
                 break;
 
+            // Triggers when the drone reaches a waypoint
+            // TODO- see if there's a better way to check for the final waypoint
+            // TODO- doesn't work if there is a single waypoint on the mission
+            case AttributeEvent.MISSION_ITEM_REACHED:
+                nextWaypoint += 1;
+
+                // Block user input if this was the final waypoint on the mission
+                if (missionControl.isFinalWaypoint(nextWaypoint)) {
+                    alertUser("Drone returning home...");
+                    animateConnectArmFab(USER_CLICKED);
+                }
+
+                break;
+
             case AttributeEvent.STATE_DISCONNECTED:
                 Log.d("myTag", "Drone disconnected");
                 alertUser("Drone Disconnected");
@@ -691,9 +705,11 @@ public class MainActivity extends AppCompatActivity
                 if (!vehicleState.isArmed()) {                      // Drone has landed
                     Log.d("myTag", "Drone landed");
                     alertUser("Drone successfully landed");
+                    nextWaypoint = 0;
                     droneState = DRONE_CONNECTED;
                     animateConnectArmFab(droneState);
                 }
+
                 //alertUser("Arming Drone and taking off...");
 //                Gps locationHome = drone.getAttribute(AttributeType.GPS);
 //                LatLongAlt droneHome = new LatLongAlt(locationHome.getPosition(), 0);
