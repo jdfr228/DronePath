@@ -5,7 +5,9 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.SeekBar;
@@ -39,12 +41,20 @@ public class FlightVarsDialogFragment extends DialogFragment {
         // Get passed arguments from MainActivity
         double velocity = this.getArguments().getDouble("currVelocity");
         double altitude = this.getArguments().getDouble("currAltitude");
-        final double maxVelocity = this.getArguments().getDouble("maxVelocity");
-        final double maxAltitude = this.getArguments().getDouble("maxAltitude");
+
+        // Get stored settings
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        final double maxVelocity = Double.parseDouble(sharedPreferences.getString(
+                "pref_key_max_velocity", ""));
+        final double minAltitude = Double.parseDouble(sharedPreferences.getString(
+                "pref_key_min_altitude", ""));
+        final double maxAltitude = Double.parseDouble(sharedPreferences.getString(
+                "pref_key_max_altitude", ""));
 
         // Set the SeekBars to the correct starting values
         velocitySeekBar.setProgress((int) Math.round(velocity / maxVelocity * 100));
-        altitudeSeekBar.setProgress((int) Math.round(altitude / maxAltitude * 100));
+        altitudeSeekBar.setProgress((int) Math.round((altitude - minAltitude) / (maxAltitude - minAltitude)
+                * 100));
 
 
         // Define the dialog
@@ -56,7 +66,8 @@ public class FlightVarsDialogFragment extends DialogFragment {
                     public void onClick(DialogInterface dialog, int id) { // User hit OK
                         //double newVelocity = progressToDouble(velocitySeekBar.getProgress());
                         double newVelocity = (velocitySeekBar.getProgress() / 100.0) * maxVelocity;
-                        double newAltitude = (altitudeSeekBar.getProgress() / 100.0) * maxAltitude;
+                        double newAltitude = (altitudeSeekBar.getProgress() / 100.0) * (maxAltitude - minAltitude)
+                                + minAltitude;
                         mListener.onFlightVarsDialogComplete(newVelocity, newAltitude);   // Pass to Main Activity
                     }
                 })
@@ -113,7 +124,8 @@ public class FlightVarsDialogFragment extends DialogFragment {
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                double altitudeVal = (altitudeSeekBar.getProgress() / 100.0) * maxAltitude;
+                double altitudeVal = (altitudeSeekBar.getProgress() / 100.0) * (maxAltitude - minAltitude)
+                        + minAltitude;
                 altitudeText.setText(String.format(Locale.ENGLISH, "%.1f", altitudeVal));
 
                 float xPosition = altitudeSeekBar.getX() + altitudeSeekBar.getThumb().getBounds().exactCenterX();

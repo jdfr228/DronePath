@@ -1,9 +1,11 @@
 package com.dronepath;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -44,8 +46,6 @@ public class MainActivity extends AppCompatActivity
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
     public double velocity, altitude;
-    public double maxVelocity = 10.0;   //
-    public double maxAltitude = 50.0;   // TODO- allow the user to change these in a menu
     public String savedLatitude = "";
     public String savedLongitude = "";
     public boolean savedCheckBox = false;
@@ -164,6 +164,9 @@ public class MainActivity extends AppCompatActivity
         droneHandler = new DroneHandler(this);
 
         toast = Toast.makeText(getApplicationContext(), "", Toast.LENGTH_LONG);
+
+        // Set the default user Settings
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
     }
 
     @Override
@@ -205,9 +208,12 @@ public class MainActivity extends AppCompatActivity
                 animateConnectArmFab(USER_CLICKED);     // Show loading icon & disable add. clicking
 
                 // Determine action for the button based on the state of the drone
-                if (droneHandler.getDroneState() == DRONE_DISCONNECTED) { droneHandler.connectToDrone(); }
-                else if (droneHandler.getDroneState() == DRONE_CONNECTED) { droneHandler.startFlight(); }
-                else if (droneHandler.getDroneState() == DRONE_ARMED) { droneHandler.returnHome(); }
+                if (droneHandler.getDroneState() == DRONE_DISCONNECTED) {
+                    droneHandler.connectToDrone(); }
+                else if (droneHandler.getDroneState() == DRONE_CONNECTED) {
+                    droneHandler.startFlight(); }
+                else if (droneHandler.getDroneState() == DRONE_ARMED) {
+                    droneHandler.returnHome(); }
 
                 break;
         }
@@ -276,9 +282,7 @@ public class MainActivity extends AppCompatActivity
                 // Pass arguments to the new Dialog
                 Bundle FlightVarArgs = new Bundle();
                 FlightVarArgs.putDouble("currVelocity", velocity);
-                FlightVarArgs.putDouble("maxVelocity", maxVelocity);
                 FlightVarArgs.putDouble("currAltitude", altitude);
-                FlightVarArgs.putDouble("maxAltitude", maxAltitude);
                 flightVarsDialog.setArguments(FlightVarArgs);
 
                 flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");

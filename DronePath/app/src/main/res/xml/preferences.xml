@@ -8,15 +8,20 @@
         android:key="pref_key_flight_parameters">
 
         <EditTextPreference
-            android:key="pref_key_velocity_max"
+            android:key="pref_key_max_velocity"
             android:title="@string/pref_title_velocity_max"
             android:inputType="numberDecimal"
             android:defaultValue="10.0" />
         <EditTextPreference
-            android:key="pref_key_altitude_max"
+            android:key="pref_key_min_altitude"
+            android:title="@string/pref_title_altitude_min"
+            android:inputType="numberDecimal"
+            android:defaultValue="10.0"/>
+        <EditTextPreference
+            android:key="pref_key_max_altitude"
             android:title="@string/pref_title_altitude_max"
             android:inputType="numberDecimal"
-            android:defaultValue="10.0" />
+            android:defaultValue="50.0" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -43,19 +48,23 @@
             <Preference
                 android:key="pref_key_telemetry_latitude"
                 android:title="@string/pref_title_telemetry_latitude"
-                android:summary="None Reported" />
+                android:summary="None Reported"
+                android:defaultValue=" " />
             <Preference
                 android:key="pref_key_telemetry_longitude"
                 android:title="@string/pref_title_telemetry_longitude"
-                android:summary="None Reported" />
+                android:summary="None Reported"
+                android:defaultValue=" " />
             <Preference
                 android:key="pref_key_telemetry_velocity"
                 android:title="@string/pref_title_telemetry_velocity"
-                android:summary="None Reported" />
+                android:summary="None Reported"
+                android:defaultValue=" " />
             <Preference
                 android:key="pref_key_telemetry_altitude"
                 android:title="@string/pref_title_telemetry_altitude"
-                android:summary="None Reported" />
+                android:summary="None Reported"
+                android:defaultValue=" " />
 
         </PreferenceScreen>
     </PreferenceCategory>
