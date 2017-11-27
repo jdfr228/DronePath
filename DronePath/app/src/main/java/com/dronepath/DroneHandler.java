@@ -2,6 +2,8 @@ package com.dronepath;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -29,6 +31,7 @@ import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
@@ -51,9 +54,10 @@ public class DroneHandler implements DroneListener, TowerListener {
     static final int DRONE_CONNECTED = 1;
     static final int DRONE_DISCONNECTED = 2;
     static final int DRONE_ARMED = 3;
-    private int droneState = DRONE_DISCONNECTED;
+    private static int droneState = DRONE_DISCONNECTED;
 
     private boolean updateMapFlag = true;
+    private ConnectionTimeoutTask connectTimeout;
 
     private MainActivity activity;
 
@@ -84,9 +88,11 @@ public class DroneHandler implements DroneListener, TowerListener {
     void connectToDrone() {
         Log.d("drone", "connectToDrone() called");
         activity.alertUser("Connecting to drone...");
+
         Bundle extraParams = new Bundle();
-        int port = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(
-                activity.getApplicationContext()).getString("pref_key_drone_port", ""));
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(
+                activity.getApplicationContext());
+        int port = Integer.parseInt(sharedPreferences.getString("pref_key_drone_port", ""));
         extraParams.putInt(ConnectionType.EXTRA_UDP_SERVER_PORT, port); // default port is 14550
 
         ConnectionParameter connectionParams = new ConnectionParameter(ConnectionType.TYPE_UDP,
@@ -95,7 +101,13 @@ public class DroneHandler implements DroneListener, TowerListener {
 
         this.drone.connect(connectionParams);
 
-        // TODO- implement a timeout for drone connection
+        // Get length in seconds of the connection timeout
+        final int timeoutLength = Integer.parseInt(sharedPreferences.getString(
+                "pref_key_timeout_length", ""));
+
+        // create an asynchronous timeout thread for connection timeout
+        connectTimeout = new ConnectionTimeoutTask(activity);
+        connectTimeout.execute(timeoutLength);
     }
 
     void disconnectDrone() {
@@ -165,7 +177,7 @@ public class DroneHandler implements DroneListener, TowerListener {
         });
     }
 
-    void arm() {
+    private void arm() {
         final State vehicleState = this.drone.getAttribute(AttributeType.STATE);
 
         // Arm drone if necessary
@@ -206,7 +218,7 @@ public class DroneHandler implements DroneListener, TowerListener {
         }
     }
 
-    void takeoff() {
+    private void takeoff() {
         Log.d("drone", "takeoff() called");
         activity.alertUser("Drone taking off...");
         ControlApi.getApi(drone).takeoff(1, new AbstractCommandListener() {
@@ -296,6 +308,9 @@ public class DroneHandler implements DroneListener, TowerListener {
     public void onDroneEvent(String event, Bundle extras) {
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
+                // Cancel the timeout Async task
+                connectTimeout.cancel(true);
+
                 Log.d("drone", "Drone connected");
                 activity.alertUser("Drone Connected");
                 droneState = DRONE_CONNECTED;
@@ -421,5 +436,45 @@ public class DroneHandler implements DroneListener, TowerListener {
     void controlTowerDisconnect() {
         controlTower.unregisterDrone(drone);
         controlTower.disconnect();
+    }
+
+    // Timeout for the drone connection
+    private static class ConnectionTimeoutTask extends AsyncTask<Integer, Integer, Void> {
+        private WeakReference<MainActivity> activityReference;
+
+        ConnectionTimeoutTask(MainActivity context) {
+            // Create a weak reference to MainActivity to avoid memory leaks
+            activityReference = new WeakReference<>(context);
+        }
+
+        protected Void doInBackground(Integer... timeoutLength) {
+            int milliseconds = timeoutLength[0] * 1000;
+
+            try {
+                Thread.sleep(milliseconds);
+            } catch(InterruptedException e) {
+                Log.d("droneConnection", "Timeout thread interrupted");
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+            Log.d("droneConnection", "Timeout thread complete");
+
+            // pull the reference from the weak reference if it still exists
+            MainActivity postActivity = activityReference.get();
+
+            // alert the user
+            postActivity.alertUser("Drone connection timeout");
+            // update the connect/arm button
+            droneState = DRONE_DISCONNECTED;
+            postActivity.animateConnectArmFab(droneState);
+        }
+
+        protected void onCancelled(Void result) {
+            Log.d("droneConnection", "Timeout thread cancelled");
+            // Do nothing
+        }
     }
 }

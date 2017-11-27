@@ -16,7 +16,7 @@
             android:key="pref_key_min_altitude"
             android:title="@string/pref_title_altitude_min"
             android:inputType="numberDecimal"
-            android:defaultValue="10.0"/>
+            android:defaultValue="10.0" />
         <EditTextPreference
             android:key="pref_key_max_altitude"
             android:title="@string/pref_title_altitude_max"
@@ -29,10 +29,15 @@
         android:key="pref_key_drone_connection_parameters">
 
         <EditTextPreference
+            android:key="pref_key_timeout_length"
+            android:title="@string/pref_title_timeout_length"
+            android:inputType="number"
+            android:defaultValue="10" />
+        <EditTextPreference
             android:key="pref_key_drone_port"
             android:title="@string/pref_title_drone_port"
             android:inputType="number"
-            android:defaultValue="14550"/>
+            android:defaultValue="14550" />
 
     </PreferenceCategory>
 
@@ -70,21 +75,3 @@
     </PreferenceCategory>
 
 </PreferenceScreen>
-
-    <!--<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context="com.dronepath.SettingsActivity">
-
-        <Button
-            android:layout_width="150dp"
-            android:layout_height="wrap_content"
-            android:text="Connect"
-            android:id="@+id/btnConnect"
-            android:onClick="onBtnConnectTap"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
-
-    </android.support.constraint.ConstraintLayout>-->
