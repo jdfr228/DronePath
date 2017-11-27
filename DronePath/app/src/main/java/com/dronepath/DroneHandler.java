@@ -27,6 +27,7 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
 import com.o3dr.services.android.lib.drone.property.Gps;
+import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
@@ -106,7 +107,7 @@ public class DroneHandler implements DroneListener, TowerListener {
                 "pref_key_timeout_length", ""));
 
         // create an asynchronous timeout thread for connection timeout
-        connectTimeout = new ConnectionTimeoutTask(activity);
+        connectTimeout = new ConnectionTimeoutTask(activity, drone);
         connectTimeout.execute(timeoutLength);
     }
 
@@ -441,10 +442,12 @@ public class DroneHandler implements DroneListener, TowerListener {
     // Timeout for the drone connection
     private static class ConnectionTimeoutTask extends AsyncTask<Integer, Integer, Void> {
         private WeakReference<MainActivity> activityReference;
+        private WeakReference<Drone> droneReference;
 
-        ConnectionTimeoutTask(MainActivity context) {
-            // Create a weak reference to MainActivity to avoid memory leaks
+        ConnectionTimeoutTask(MainActivity context, Drone drone) {
+            // Create a weak reference to MainActivity & Drone to avoid memory leaks
             activityReference = new WeakReference<>(context);
+            droneReference = new WeakReference<>(drone);
         }
 
         protected Void doInBackground(Integer... timeoutLength) {
@@ -462,11 +465,16 @@ public class DroneHandler implements DroneListener, TowerListener {
         protected void onPostExecute(Void result) {
             Log.d("droneConnection", "Timeout thread complete");
 
-            // pull the reference from the weak reference if it still exists
+            // pull the references from the weak references if they still exist
             MainActivity postActivity = activityReference.get();
+            Drone postDrone = droneReference.get();
+
+            // stop connection attempt
+            postDrone.disconnect();
 
             // alert the user
             postActivity.alertUser("Drone connection timeout");
+
             // update the connect/arm button
             droneState = DRONE_DISCONNECTED;
             postActivity.animateConnectArmFab(droneState);

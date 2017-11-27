@@ -32,7 +32,7 @@
             android:key="pref_key_timeout_length"
             android:title="@string/pref_title_timeout_length"
             android:inputType="number"
-            android:defaultValue="10" />
+            android:defaultValue="15" />
         <EditTextPreference
             android:key="pref_key_drone_port"
             android:title="@string/pref_title_drone_port"

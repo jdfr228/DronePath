@@ -1,18 +1,22 @@
 package com.dronepath.mission;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.dronepath.MainActivity;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.coordinate.LatLongAlt;
+import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.mission.Mission;
 import com.o3dr.services.android.lib.drone.mission.item.MissionItem;
 import com.o3dr.services.android.lib.drone.mission.item.command.ReturnToLaunch;
 import com.o3dr.services.android.lib.drone.mission.item.command.Takeoff;
 import com.o3dr.services.android.lib.drone.mission.item.spatial.Waypoint;
+import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.util.Utils;
 
 import java.util.ArrayList;
@@ -31,10 +35,14 @@ public class MissionControl {
     private final MissionApi missionApi;
     private final LocalBroadcastManager lbm;
     private final List<MissionItem> missionItems = new ArrayList<MissionItem>();
+    private MainActivity activity;
 
     public MissionControl(Context context, Drone drone) {
         this.drone = drone;
         this.context = context;
+        if (context instanceof Activity) {
+            activity = (MainActivity) context;
+        }
         this.missionApi = new MissionApi(drone);
 
         lbm = LocalBroadcastManager.getInstance(this.context);
@@ -49,7 +57,7 @@ public class MissionControl {
         Mission mission = new Mission();
 
         Takeoff takeOff = new Takeoff();
-        takeOff.setTakeoffAltitude(60D);
+        takeOff.setTakeoffAltitude(activity.getAltitude()); // Gets from altitude slider
         mission.addMissionItem(takeOff);
 
         if (!missionItems.isEmpty())
@@ -58,6 +66,11 @@ public class MissionControl {
 
         ReturnToLaunch rtl = new ReturnToLaunch();
         mission.addMissionItem(rtl);
+
+        // Set drone flight speed
+        // TODO- this seems to currently be ignored
+        Speed droneSpeed = drone.getAttribute(AttributeType.SPEED);
+        droneSpeed.setAirSpeed(activity.getVelocity());
 
         return mission;
     }
@@ -75,7 +88,7 @@ public class MissionControl {
      * @param points LatLong objects containing mission waypoints
      */
     public void addWaypoints(List<LatLong> points) {
-        float alt = 60F;
+        double alt = activity.getAltitude();
 
         // Clear any previously saved waypoints
         missionItems.clear();
@@ -91,9 +104,7 @@ public class MissionControl {
 
     // Checks to see if the next waypoint is the final one on the mission or not
     public boolean isFinalWaypoint(int nextWaypoint) {
-        if (nextWaypoint == missionItems.size() + 1) {
-            return true;
-        } else { return false; }
+        return (nextWaypoint == missionItems.size() + 1);   // Simplified if statement
     }
 
     public void notifyMissionUpdate() {

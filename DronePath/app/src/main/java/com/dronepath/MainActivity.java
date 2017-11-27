@@ -45,20 +45,24 @@ public class MainActivity extends AppCompatActivity
                     View.OnClickListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
-    public double velocity, altitude;
-    public String savedLatitude = "";
-    public String savedLongitude = "";
-    public boolean savedCheckBox = false;
+    private double velocity, altitude;
+    private String savedLatitude = "";
+    private String savedLongitude = "";
+    private boolean savedCheckBox = false;
 
     // Floating Action Buttons
     private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab, connect_arm_fab;
     boolean isFabExpanded, isMapDrawable = false;
     private Animation open_fab,close_fab;
 
-    public DroneMapFragment mapFragment;    // TODO- you could make an argument for this being private...
+    public DroneMapFragment mapFragment;    // TODO- this should probably be private- easier to make public
     private DroneHandler droneHandler;
 
     private Toast toast;
+
+    // Variable Getters
+    public double getVelocity() { return velocity; }
+    public double getAltitude() { return altitude; }
 
     // Dialog Listeners
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
