@@ -1,13 +1,15 @@
 package com.dronepath;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -33,36 +35,39 @@ import com.o3dr.services.android.lib.coordinate.LatLong;
 
 import java.util.List;
 
-import static com.dronepath.DroneHandler.USER_CLICKED;
-import static com.dronepath.DroneHandler.DRONE_CONNECTED;
-import static com.dronepath.DroneHandler.DRONE_DISCONNECTED;
-import static com.dronepath.DroneHandler.DRONE_ARMED;
+import static com.dronepath.DroneHandlerFragment.USER_CLICKED;
+import static com.dronepath.DroneHandlerFragment.DRONE_CONNECTED;
+import static com.dronepath.DroneHandlerFragment.DRONE_DISCONNECTED;
+import static com.dronepath.DroneHandlerFragment.DRONE_ARMED;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
                     FlightVarsDialogFragment.OnCompleteListener,
                     GPSLocationDialogFragment.OnCompleteListener,
-                    View.OnClickListener {
+                    View.OnClickListener, ConnectionTimeoutFragment.OnCompleteListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
-    private double velocity, altitude;
-    private String savedLatitude = "";
-    private String savedLongitude = "";
-    private boolean savedCheckBox = false;
+    private static double velocity = 0.0, altitude;
+    private static String savedLatitude = "";
+    private static String savedLongitude = "";
+    private static boolean savedCheckBox = false;
+    //private static boolean connectArmLoadingFlag = false;  // used to check the button state on screen rotation
 
     // Floating Action Buttons
     private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab, connect_arm_fab;
-    boolean isFabExpanded, isMapDrawable = false;
-    private Animation open_fab,close_fab;
+    private static boolean isFabExpanded, isMapDrawable = false;
+    private static Animation open_fab,close_fab;
 
     public DroneMapFragment mapFragment;    // TODO- this should probably be private- easier to make public
-    private DroneHandler droneHandler;
+    private DroneHandlerFragment droneHandler;
 
-    private Toast toast;
+    private static Toast toast;
+
 
     // Variable Getters
     public double getVelocity() { return velocity; }
     public double getAltitude() { return altitude; }
+
 
     // Dialog Listeners
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
@@ -94,7 +99,18 @@ public class MainActivity extends AppCompatActivity
         savedCheckBox = isWaypoint;
     }
 
+    // ConnectionTimeoutFragment listener implementation (updates connect/arm button after timeout)
+    public void onConnectionTimeoutTaskComplete() {
+        // Stop connection attempt
+        droneHandler.disconnectDrone();
+        // TODO- an explicit disconnectDrone call may be causing connection issues
 
+        alertUser("Drone connection timed out");
+        animateConnectArmFab(DRONE_DISCONNECTED);
+    }
+
+
+    // Activity Lifecycle methods (in the order they would be called)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,7 +119,6 @@ public class MainActivity extends AppCompatActivity
         // Create map fragment
         mapFragment = (DroneMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.setRetainInstance(true); // Makes sure map is saved when orientation is changed
 
         // Set the drag listener for the map
         // Only adds points when the drawing is enabled
@@ -165,14 +180,54 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        droneHandler = new DroneHandler(this);
+        // Set up the droneHandler fragment
+        FragmentManager fragmentManager = this.getSupportFragmentManager();
+        droneHandler = (DroneHandlerFragment) fragmentManager.findFragmentByTag("droneHandler");
+        if (droneHandler == null) {
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            droneHandler = new DroneHandlerFragment();
+            fragmentTransaction.add(droneHandler, "droneHandler");
+            fragmentTransaction.commit();
+        }
 
         toast = Toast.makeText(getApplicationContext(), "", Toast.LENGTH_LONG);
 
         // Set the default user Settings
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        // Load some of these default settings
+        altitude = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(this)
+                .getString("pref_key_min_altitude", ""));
     }
 
+    /*@Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        connectArmLoadingFlag = savedInstanceState.getBoolean("connectArmLoadingFlag");
+    }*/
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // Restore the proper state of the connect/arm button
+        animateConnectArmFab(droneHandler.getDroneState());
+    }
+
+    /*@Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putBoolean("connectArmLoadingFlag", connectArmLoadingFlag);
+    }*/
+
+    /*@Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        animateConnectArmFab(DRONE_DISCONNECTED);
+    }*/
+
+
+    // Button press Listeners
     @Override
     // Handles input when any FAB button is pressed
     public void onClick(View v) {
@@ -217,7 +272,7 @@ public class MainActivity extends AppCompatActivity
                 else if (droneHandler.getDroneState() == DRONE_CONNECTED) {
                     droneHandler.startFlight(); }
                 else if (droneHandler.getDroneState() == DRONE_ARMED) {
-                    droneHandler.returnHome(); }
+                    droneHandler.returnHome(false); }
 
                 break;
         }
@@ -297,6 +352,7 @@ public class MainActivity extends AppCompatActivity
                     droneHandler.disconnectDrone();
                 } else {
                     alertUser("No drone is connected");
+                    animateConnectArmFab(DRONE_DISCONNECTED);
                 }
                 break;
         }
@@ -306,6 +362,8 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+
+    // Button animation Helper methods
     // Animate the menu buttons on map screen to open and close
     public void animateFabButtons() {
         if (isFabExpanded){
@@ -338,7 +396,7 @@ public class MainActivity extends AppCompatActivity
         Animation logic (which is in the animateConnectArmFab method) should be sound, while the drone
         logic, as I mention below, needs to be replaced.
 
-        The thought process here is that the USER_CLICKED case is triggered from the onClick function
+        The thought process here is that the USER_CLICKED case is triggered from the onClick method
         above, and simply shows the loading icon and disables the user from pressing the button again
         so they don't start throwing out arm commands before the drone has connected or anything.
 
@@ -359,19 +417,20 @@ public class MainActivity extends AppCompatActivity
 
         switch (event) {
             case USER_CLICKED:  // Show loading icon
-                Log.d("myTag", "User clicked button");
+                Log.d("connectButton", "User clicked button");
                 // Remove any icons
                 connect_arm_fab.setImageResource(R.drawable.empty_drawable);
 
                 // Show loading indicator
                 loadingIndicator.setVisibility(View.VISIBLE);
 
-                // Make the button unclickable
+                // Make the button unclickable and set the loading flag for screen rotation
                 connect_arm_fab.setClickable(false);
+                //connectArmLoadingFlag = true;
                 break;
 
             case DRONE_CONNECTED:   // Show arm icon
-                Log.d("myTag", "Drone icon updated to arm icon");
+                Log.d("connectButton", "Drone icon updated to arm icon");
                 // Hide loading indicator
                 loadingIndicator.setVisibility(View.INVISIBLE);
 
@@ -382,30 +441,35 @@ public class MainActivity extends AppCompatActivity
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, android.R.color.holo_green_dark)));
 
-                // Make the button clickable again
+                // Make the button clickable again and reset the loading flag
                 connect_arm_fab.setClickable(true);
+                //connectArmLoadingFlag = false;
                 break;
 
             case DRONE_DISCONNECTED:    // Show connect icon
-                Log.d("myTag", "Drone icon updated to connect icon");
+                Log.d("connectButton", "Drone icon updated to connect icon");
                 loadingIndicator.setVisibility(View.INVISIBLE);
                 connect_arm_fab.setImageResource(R.drawable.quantum_ic_bigtop_updates_white_24);
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, R.color.colorAccent)));
                 connect_arm_fab.setClickable(true);
+                //connectArmLoadingFlag = false;
                 break;
 
             case DRONE_ARMED:   // Show cancel/return icon
-                Log.d("myTag", "Drone icon updated to return/cancel icon");
+                Log.d("connectButton", "Drone icon updated to return/cancel icon");
                 loadingIndicator.setVisibility(View.INVISIBLE);
                 connect_arm_fab.setImageResource(R.drawable.cast_ic_notification_disconnect);
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, android.R.color.holo_red_dark)));
                 connect_arm_fab.setClickable(true);
+                //connectArmLoadingFlag = false;
                 break;
         }
     }
 
+
+    // Miscellaneous Helper methods
     /**
      * Displays a short notification-like message on the screen for the user to see
      *
@@ -414,26 +478,5 @@ public class MainActivity extends AppCompatActivity
     public void alertUser(String message) {
         toast.setText(message);
         toast.show();
-    }
-
-    /**
-     * Safely handles everything needed at start
-     */
-    @Override
-    public void onStart() {
-        super.onStart();
-        droneHandler.controlTowerConnect();
-    }
-
-    /**
-     * Safely handles everything when app closes
-     */
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (droneHandler.isDroneConnected()) {
-            droneHandler.disconnectDrone();
-        }
-        droneHandler.controlTowerDisconnect();
     }
 }

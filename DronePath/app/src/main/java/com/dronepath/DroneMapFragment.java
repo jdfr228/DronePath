@@ -32,10 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * Created by Edwin on 10/21/2017.
- */
-
 public class DroneMapFragment extends SupportMapFragment implements GoogleMap.OnMarkerDragListener,OnMapReadyCallback{
 
     private static final String TAG = "DroneMapFragment";
@@ -58,6 +54,15 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     };
     private static final int REQUEST_LOCATION_PERMISSIONS = 0;
 
+
+    // Fragment Lifecycle methods (in the order they would be called)
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Don't destroy the fragment on a screen rotation
+        setRetainInstance(true);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -88,6 +93,32 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     }
 
     @Override
+    public void onStart() {
+        mClient.connect();
+        super.onStart();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mClient.disconnect();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        // clean up some potential memory leaks in case the fragment is killed in an odd way
+        mMap.setOnMarkerDragListener(null);
+        mMap = null;
+        mClient = null;
+        mDroneMapWrapper = null;
+        mOriginalView = null;
+    }
+
+
+    // Other listeners
+    @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
@@ -106,18 +137,6 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     }
 
     @Override
-    public void onStart() {
-        mClient.connect();
-        super.onStart();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        mClient.disconnect();
-    }
-
-    @Override
     // Request permissions from user
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
@@ -131,6 +150,8 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         }
     }
 
+
+    // Helper methods
     // Checks if location permissions are allowed
     private boolean hasLocationPermission() {
         int result = ContextCompat
@@ -269,13 +290,17 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     // Clear just the drone map marker
     public void clearDronePoint() {
         // TODO- *properly* remove just the drone map marker
-        droneMarker.setVisible(false);
+        if (droneMarker != null) {
+            droneMarker.setVisible(false);
+        }
     }
 
     public void setOnDragListener(DroneMapWrapper.OnDragListener onDragListener) {
         mDroneMapWrapper.setOnDragListener(onDragListener);
     }
 
+
+    // Drag listeners
     @Override
     // Stop map from moving so waypoint can be dragged
     public void onMarkerDragStart(Marker marker) {
@@ -301,6 +326,8 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
         getMap().getUiSettings().setScrollGesturesEnabled(true);
     }
 
+
+    // Drone connection listeners
     // Create marker for drone position
     public void onDroneConnected(LatLong drone){
         MarkerOptions markerOptions = new MarkerOptions();

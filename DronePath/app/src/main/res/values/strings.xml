@@ -22,9 +22,9 @@
 
     <string name="pref_title_variable_parameters">Variable Parameters</string>
     <string name="pref_title_connection_parameters">Connection Parameters</string>
-    <string name="pref_title_velocity_max">Maximum Velocity</string>
-    <string name="pref_title_altitude_min">Minimum Altitude</string>
-    <string name="pref_title_altitude_max">Maximum Altitude</string>
+    <string name="pref_title_velocity_max">Maximum Velocity (m/s)</string>
+    <string name="pref_title_altitude_min">Minimum Altitude (Meters)</string>
+    <string name="pref_title_altitude_max">Maximum Altitude (Meters)</string>
     <string name="pref_title_timeout_length">Seconds For Drone Connection Timeout</string>
     <string name="pref_title_drone_port">Drone Connection UDP Port</string>
 

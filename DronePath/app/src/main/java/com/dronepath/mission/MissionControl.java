@@ -22,16 +22,11 @@ import com.o3dr.services.android.lib.util.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by wsong on 10/28/17.
- */
-
 public class MissionControl {
     public static final String ACTION_MISSION_PROXY_UPDATE = Utils.PACKAGE_NAME + ".ACTION_MISSION_PROXY_UPDATE";
 
     // Private member variables
     private final Drone drone;
-    private final Context context;
     private final MissionApi missionApi;
     private final LocalBroadcastManager lbm;
     private final List<MissionItem> missionItems = new ArrayList<MissionItem>();
@@ -39,13 +34,12 @@ public class MissionControl {
 
     public MissionControl(Context context, Drone drone) {
         this.drone = drone;
-        this.context = context;
         if (context instanceof Activity) {
             activity = (MainActivity) context;
         }
         this.missionApi = new MissionApi(drone);
 
-        lbm = LocalBroadcastManager.getInstance(this.context);
+        lbm = LocalBroadcastManager.getInstance(activity);
     }
 
     /**
@@ -69,8 +63,9 @@ public class MissionControl {
 
         // Set drone flight speed
         // TODO- this seems to currently be ignored
+        // Tried setGroundSpeed and setAirSpeed
         Speed droneSpeed = drone.getAttribute(AttributeType.SPEED);
-        droneSpeed.setAirSpeed(activity.getVelocity());
+        droneSpeed.setGroundSpeed(activity.getVelocity());
 
         return mission;
     }
