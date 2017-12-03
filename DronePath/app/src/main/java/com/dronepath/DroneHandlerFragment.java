@@ -347,6 +347,11 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
         });
     }
 
+    // Push new velocity to drone
+    void updateVelocity(float newVelocity, boolean inFlight) {
+        missionControl.updateVelocity(newVelocity, inFlight);
+    }
+
 
     // Event listeners
     /**

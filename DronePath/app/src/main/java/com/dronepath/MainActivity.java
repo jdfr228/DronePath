@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity
                     View.OnClickListener, ConnectionTimeoutFragment.OnCompleteListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
-    private static double velocity = 0.0, altitude;
+    private static double velocity = 1.0, altitude;
     private static String savedLatitude = "";
     private static String savedLongitude = "";
     private static boolean savedCheckBox = false;
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity
 
     // Floating Action Buttons
     private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab, connect_arm_fab;
-    private static boolean isFabExpanded, isMapDrawable = false;
+    private static boolean isFabExpanded, isMapDrawable = false, inFlight = false;
     private static Animation open_fab,close_fab;
 
     public DroneMapFragment mapFragment;    // TODO- this should probably be private- easier to make public
@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity
     // FlightVarsDialogFragment.OnCompleteListener implementation (passes variables)
     public void onFlightVarsDialogComplete(double newVelocity, double newAltitude) {
         velocity = newVelocity;
+        droneHandler.updateVelocity((float) velocity, inFlight);  // Push new velocity to drone
         altitude = newAltitude;
     }
 
@@ -193,7 +194,7 @@ public class MainActivity extends AppCompatActivity
 
         // Set the default user Settings
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-        // Load some of these default settings
+        // Load minimum altitude
         altitude = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(this)
                 .getString("pref_key_min_altitude", ""));
     }
@@ -347,6 +348,7 @@ public class MainActivity extends AppCompatActivity
                 Bundle FlightVarArgs = new Bundle();
                 FlightVarArgs.putDouble("currVelocity", velocity);
                 FlightVarArgs.putDouble("currAltitude", altitude);
+                FlightVarArgs.putBoolean("inFlight", inFlight);
                 flightVarsDialog.setArguments(FlightVarArgs);
 
                 flightVarsDialog.show(getFragmentManager(), "FlightVarsDialog");
@@ -449,6 +451,7 @@ public class MainActivity extends AppCompatActivity
                 // Make the button clickable again and reset the loading flag
                 connect_arm_fab.setClickable(true);
                 connectArmLoadingFlag = false;
+                inFlight = false;
                 break;
 
             case DRONE_DISCONNECTED:    // Show connect icon
@@ -459,6 +462,7 @@ public class MainActivity extends AppCompatActivity
                         (ContextCompat.getColor(this, R.color.colorAccent)));
                 connect_arm_fab.setClickable(true);
                 connectArmLoadingFlag = false;
+                inFlight = false;
                 break;
 
             case DRONE_ARMED:   // Show cancel/return icon
@@ -469,6 +473,7 @@ public class MainActivity extends AppCompatActivity
                         (ContextCompat.getColor(this, android.R.color.holo_red_dark)));
                 connect_arm_fab.setClickable(true);
                 connectArmLoadingFlag = false;
+                inFlight = true;
                 break;
         }
     }

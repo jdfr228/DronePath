@@ -30,6 +30,9 @@ public class FlightVarsDialogFragment extends DialogFragment {
         final SeekBar velocitySeekBar = (SeekBar) view.findViewById(R.id.velocitySeekBar);
         final SeekBar altitudeSeekBar = (SeekBar) view.findViewById(R.id.altitudeSeekBar);
 
+        // Disable the Altitude SeekBar if the drone is currently in flight
+        altitudeSeekBar.setEnabled(!this.getArguments().getBoolean("inFlight"));
+
         // References to the TextViews to be shown above the SeekBars
         final TextView velocityText = (TextView) view.findViewById(R.id.velocityTextView);
         final TextView altitudeText = (TextView) view.findViewById(R.id.altitudeTextView);
@@ -52,7 +55,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
                 "pref_key_max_altitude", ""));
 
         // Set the SeekBars to the correct starting values
-        velocitySeekBar.setProgress((int) Math.round(velocity / maxVelocity * 100));
+        velocitySeekBar.setProgress((int) Math.round((velocity - 1.0) / (maxVelocity - 1.0) * 100));
         altitudeSeekBar.setProgress((int) Math.round((altitude - minAltitude) / (maxAltitude - minAltitude)
                 * 100));
 
@@ -64,8 +67,7 @@ public class FlightVarsDialogFragment extends DialogFragment {
 
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) { // User hit OK
-                        //double newVelocity = progressToDouble(velocitySeekBar.getProgress());
-                        double newVelocity = (velocitySeekBar.getProgress() / 100.0) * maxVelocity;
+                        double newVelocity = (velocitySeekBar.getProgress() / 100.0) * (maxVelocity - 1.0) + 1.0;
                         double newAltitude = (altitudeSeekBar.getProgress() / 100.0) * (maxAltitude - minAltitude)
                                 + minAltitude;
                         mListener.onFlightVarsDialogComplete(newVelocity, newAltitude);   // Pass to Main Activity
@@ -97,7 +99,8 @@ public class FlightVarsDialogFragment extends DialogFragment {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 // Get the current velocity value
-                double velocityVal = (velocitySeekBar.getProgress() / 100.0) * maxVelocity;
+                double velocityVal = (velocitySeekBar.getProgress() / 100.0) * (maxVelocity - 1.0)
+                        + 1.0;
 
                 // Modify the TextView value
                 velocityText.setText(String.format(Locale.ENGLISH, "%.1f", velocityVal));

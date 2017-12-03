@@ -77,19 +77,38 @@ public class MissionControl {
 
             @Override
             public void onError(int executionError) {
-                Log.d("velocity", "Drone velocity set error: " + executionError);
                 activity.alertUser("Error setting drone velocity: " + executionError);
             }
 
             @Override
             public void onTimeout() {
-                Log.d("velocity", "Drone velocity set timeout");
                 activity.alertUser("Timeout when setting drone velocity");
             }
         });
 
         // Generate and send mission to drone
         missionApi.setMission(generateMission(), true);
+    }
+
+    public void updateVelocity(float newVelocity, final boolean inFlight) {
+        missionApi.setMissionSpeed(newVelocity, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                if (inFlight) {
+                    activity.alertUser("Drone velocity updated");
+                }
+            }
+
+            @Override
+            public void onError(int executionError) {
+                activity.alertUser("Error setting drone velocity: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                activity.alertUser("Timeout when setting drone velocity");
+            }
+        });
     }
 
     /**
