@@ -2,7 +2,6 @@ package com.dronepath;
 
 import android.content.Intent;
 import android.content.res.ColorStateList;
-import android.content.res.Configuration;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -51,7 +50,7 @@ public class MainActivity extends AppCompatActivity
     private static String savedLatitude = "";
     private static String savedLongitude = "";
     private static boolean savedCheckBox = false;
-    //private static boolean connectArmLoadingFlag = false;  // used to check the button state on screen rotation
+    private static boolean connectArmLoadingFlag = false;  // used to check the button state on screen rotation
 
     // Floating Action Buttons
     private FloatingActionButton menu_fab,edit_fab,place_fab,delete_fab, connect_arm_fab;
@@ -210,7 +209,11 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
 
         // Restore the proper state of the connect/arm button
-        animateConnectArmFab(droneHandler.getDroneState());
+        if (connectArmLoadingFlag) {
+            animateConnectArmFab(USER_CLICKED);
+        } else {
+            animateConnectArmFab(droneHandler.getDroneState());
+        }
     }
 
     /*@Override
@@ -219,12 +222,14 @@ public class MainActivity extends AppCompatActivity
         savedInstanceState.putBoolean("connectArmLoadingFlag", connectArmLoadingFlag);
     }*/
 
-    /*@Override
+    @Override
     public void onDestroy() {
         super.onDestroy();
 
+        // Ensure the loading icon doesn't appear when the app is closed
+        connectArmLoadingFlag = false;
         animateConnectArmFab(DRONE_DISCONNECTED);
-    }*/
+    }
 
 
     // Button press Listeners
@@ -426,7 +431,7 @@ public class MainActivity extends AppCompatActivity
 
                 // Make the button unclickable and set the loading flag for screen rotation
                 connect_arm_fab.setClickable(false);
-                //connectArmLoadingFlag = true;
+                connectArmLoadingFlag = true;
                 break;
 
             case DRONE_CONNECTED:   // Show arm icon
@@ -443,7 +448,7 @@ public class MainActivity extends AppCompatActivity
 
                 // Make the button clickable again and reset the loading flag
                 connect_arm_fab.setClickable(true);
-                //connectArmLoadingFlag = false;
+                connectArmLoadingFlag = false;
                 break;
 
             case DRONE_DISCONNECTED:    // Show connect icon
@@ -453,7 +458,7 @@ public class MainActivity extends AppCompatActivity
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, R.color.colorAccent)));
                 connect_arm_fab.setClickable(true);
-                //connectArmLoadingFlag = false;
+                connectArmLoadingFlag = false;
                 break;
 
             case DRONE_ARMED:   // Show cancel/return icon
@@ -463,7 +468,7 @@ public class MainActivity extends AppCompatActivity
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, android.R.color.holo_red_dark)));
                 connect_arm_fab.setClickable(true);
-                //connectArmLoadingFlag = false;
+                connectArmLoadingFlag = false;
                 break;
         }
     }

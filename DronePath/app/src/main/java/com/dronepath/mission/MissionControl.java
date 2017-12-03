@@ -4,32 +4,32 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.dronepath.MainActivity;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.coordinate.LatLongAlt;
-import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.mission.Mission;
 import com.o3dr.services.android.lib.drone.mission.item.MissionItem;
 import com.o3dr.services.android.lib.drone.mission.item.command.ReturnToLaunch;
 import com.o3dr.services.android.lib.drone.mission.item.command.Takeoff;
 import com.o3dr.services.android.lib.drone.mission.item.spatial.Waypoint;
-import com.o3dr.services.android.lib.drone.property.Speed;
+import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MissionControl {
-    public static final String ACTION_MISSION_PROXY_UPDATE = Utils.PACKAGE_NAME + ".ACTION_MISSION_PROXY_UPDATE";
+    private static final String ACTION_MISSION_PROXY_UPDATE = Utils.PACKAGE_NAME + ".ACTION_MISSION_PROXY_UPDATE";
 
     // Private member variables
     private final Drone drone;
     private final MissionApi missionApi;
     private final LocalBroadcastManager lbm;
-    private final List<MissionItem> missionItems = new ArrayList<MissionItem>();
+    public final List<MissionItem> missionItems = new ArrayList<MissionItem>();
     private MainActivity activity;
 
     public MissionControl(Context context, Drone drone) {
@@ -61,12 +61,6 @@ public class MissionControl {
         ReturnToLaunch rtl = new ReturnToLaunch();
         mission.addMissionItem(rtl);
 
-        // Set drone flight speed
-        // TODO- this seems to currently be ignored
-        // Tried setGroundSpeed and setAirSpeed
-        Speed droneSpeed = drone.getAttribute(AttributeType.SPEED);
-        droneSpeed.setGroundSpeed(activity.getVelocity());
-
         return mission;
     }
 
@@ -74,6 +68,27 @@ public class MissionControl {
      * Calls generateMission() to send a planned mission with waypoints to the drone
      */
     public void sendMissionToAPM() {
+        // Set drone flight speed
+        missionApi.setMissionSpeed((float) activity.getVelocity(), new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                Log.d("velocity", "Drone velocity set successfully");
+            }
+
+            @Override
+            public void onError(int executionError) {
+                Log.d("velocity", "Drone velocity set error: " + executionError);
+                activity.alertUser("Error setting drone velocity: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                Log.d("velocity", "Drone velocity set timeout");
+                activity.alertUser("Timeout when setting drone velocity");
+            }
+        });
+
+        // Generate and send mission to drone
         missionApi.setMission(generateMission(), true);
     }
 
@@ -102,7 +117,7 @@ public class MissionControl {
         return (nextWaypoint == missionItems.size() + 1);   // Simplified if statement
     }
 
-    public void notifyMissionUpdate() {
+    private void notifyMissionUpdate() {
         lbm.sendBroadcast(new Intent(ACTION_MISSION_PROXY_UPDATE));
     }
 }

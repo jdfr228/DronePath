@@ -373,8 +373,10 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
             // Triggers when the drone reaches a waypoint
             // TODO- see if there's a better way to check for the final waypoint
             // TODO- *may* not work if there is a single waypoint on the mission
-            //         ^^ In initial testing it didn't work, trying again it did?
+            //         ^^ Unable to reproduce at this time, may have been due to another bug?
             case AttributeEvent.MISSION_ITEM_REACHED:
+                Log.d("waypoints", "total number of waypoints = " + missionControl.missionItems.size());
+                Log.d("waypoints", "nextWaypoint = " + nextWaypoint);
                 nextWaypoint += 1;
 
                 // Block user input if this was the final waypoint on the mission

@@ -108,6 +108,11 @@ public class DroneMapFragment extends SupportMapFragment implements GoogleMap.On
     public void onDestroy() {
         super.onDestroy();
 
+        // clear all waypoints to avoid bugs when re-opening the app
+        // TODO- this doesn't prevent an occasional bug where the drone will follow an old path
+        //          after closing and re-opening the app
+        clearPoints();
+
         // clean up some potential memory leaks in case the fragment is killed in an odd way
         mMap.setOnMarkerDragListener(null);
         mMap = null;
