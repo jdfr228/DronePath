@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -26,10 +27,14 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
+import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Gps;
+import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
+
+import org.w3c.dom.Attr;
 
 import java.util.List;
 
@@ -53,6 +58,9 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
     // Class references
     private static ConnectionTimeoutFragment connectTimeout;
     private MainActivity activity;
+
+    // Drone data
+    private SharedPreferences sharedPreferences;
 
 
     // Fragment Lifecycle methods (in the order they would be called)
@@ -90,6 +98,7 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
         controlTower = new ControlTower(activity);
         controlTowerConnect();
         missionControl = new MissionControl(activity, drone);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
     }
 
     // Should only be called when the app is killed since setRetainInstance is set to true
@@ -421,6 +430,12 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
             // When drone has valid GPS location. Used for displaying the drone's location
             case AttributeEvent.GPS_POSITION:
                 Gps location = drone.getAttribute(AttributeType.GPS);
+
+                // Send GPS location of drone to the telemetry data screen
+                sharedPreferences.edit().putString("pref_key_telemetry_latitude", Double.toString(location.getPosition().getLatitude())).apply();
+                sharedPreferences.edit().putString("pref_key_telemetry_longitude", Double.toString(location.getPosition().getLongitude())).apply();
+
+                // Send drone location to map
                 activity.mapFragment.onDroneGPSUpdated(location.getPosition());
 
                 // Move the Map to the drone's location on initial connect
@@ -440,6 +455,17 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
                     updateMapFlag = false;
                 }
                 break;
+
+            case AttributeEvent.ALTITUDE_UPDATED:
+                // Send altitude of drone to the telemetry data screen
+                Altitude altitude = this.drone.getAttribute(AttributeType.ALTITUDE);
+                sharedPreferences.edit().putString("pref_key_telemetry_altitude", Double.toString(altitude.getAltitude())).apply();
+                break;
+
+            case AttributeEvent.SPEED_UPDATED:
+                // Send velocity of drone to the telemetry data screen
+                Speed speed = this.drone.getAttribute(AttributeType.SPEED);
+                sharedPreferences.edit().putString("pref_key_telemetry_velocity", Double.toString(speed.getGroundSpeed())).apply();
 
             default:
                 break;

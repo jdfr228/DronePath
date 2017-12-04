@@ -42,34 +42,38 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/pref_title_other_settings"
-        android:key="pref_key_other_settings">
+        android:title="@string/pref_title_telemetry"
+        android:key="pref_key_telemetry">
 
         <PreferenceScreen
             android:key="pref_key_telemetry_button"
             android:title="@string/pref_title_telemetry_button"
-            android:persistent="false">
+            android:persistent="true">
 
-            <Preference
+            <EditTextPreference
                 android:key="pref_key_telemetry_latitude"
                 android:title="@string/pref_title_telemetry_latitude"
                 android:summary="None Reported"
-                android:defaultValue=" " />
-            <Preference
+                android:defaultValue=" "
+                android:enabled="false" />
+            <EditTextPreference
                 android:key="pref_key_telemetry_longitude"
                 android:title="@string/pref_title_telemetry_longitude"
                 android:summary="None Reported"
-                android:defaultValue=" " />
-            <Preference
+                android:defaultValue=" "
+                android:enabled="false" />
+            <EditTextPreference
                 android:key="pref_key_telemetry_velocity"
                 android:title="@string/pref_title_telemetry_velocity"
                 android:summary="None Reported"
-                android:defaultValue=" " />
-            <Preference
+                android:defaultValue=" "
+                android:enabled="false" />
+            <EditTextPreference
                 android:key="pref_key_telemetry_altitude"
                 android:title="@string/pref_title_telemetry_altitude"
                 android:summary="None Reported"
-                android:defaultValue=" " />
+                android:defaultValue=" "
+                android:enabled="false" />
 
         </PreferenceScreen>
     </PreferenceCategory>
