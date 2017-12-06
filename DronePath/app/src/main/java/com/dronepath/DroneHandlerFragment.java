@@ -28,6 +28,7 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
 import com.o3dr.services.android.lib.drone.property.Altitude;
+import com.o3dr.services.android.lib.drone.property.Battery;
 import com.o3dr.services.android.lib.drone.property.Gps;
 import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.drone.property.State;
@@ -442,15 +443,22 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
                 vehicleState = this.drone.getAttribute(AttributeType.STATE);
                 Log.d("drone", "Current vehicle mode is now: "
                         + vehicleState.getVehicleMode());
+                // Send vehicle mode to the telemetry Activity
+                mModel.getVehicleMode().setValue(vehicleState.getVehicleMode().toString());
+                break;
+
+            case AttributeEvent.BATTERY_UPDATED:
+                Battery battery = drone.getAttribute(AttributeType.BATTERY);
+                int batteryLevel = (int) battery.getBatteryRemain();
+                // Send battery level to the telemetry Activity
+                mModel.getBattery().setValue(Integer.toString(batteryLevel));
                 break;
 
             // When drone has valid GPS location. Used for displaying the drone's location
             case AttributeEvent.GPS_POSITION:
                 Gps location = drone.getAttribute(AttributeType.GPS);
 
-                // Send GPS location of drone to the telemetry data screen
-                //sharedPreferences.edit().putString("pref_key_telemetry_latitude", Double.toString(location.getPosition().getLatitude())).apply();
-                //sharedPreferences.edit().putString("pref_key_telemetry_longitude", Double.toString(location.getPosition().getLongitude())).apply();
+                // Send GPS location of drone to the telemetry Activity
                 mModel.getLatitude().setValue(Double.toString(location.getPosition().getLatitude()));
                 mModel.getLongitude().setValue(Double.toString(location.getPosition().getLongitude()));
 
@@ -476,16 +484,14 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
                 break;
 
             case AttributeEvent.ALTITUDE_UPDATED:
-                // Send altitude of drone to the telemetry data screen
+                // Send altitude of drone to the telemetry Activity
                 Altitude altitude = this.drone.getAttribute(AttributeType.ALTITUDE);
-                //sharedPreferences.edit().putString("pref_key_telemetry_altitude", Double.toString(altitude.getAltitude())).apply();
                 mModel.getAltitude().setValue(Double.toString(altitude.getAltitude()));
                 break;
 
             case AttributeEvent.SPEED_UPDATED:
-                // Send velocity of drone to the telemetry data screen
+                // Send velocity of drone to the telemetry Activity
                 Speed speed = this.drone.getAttribute(AttributeType.SPEED);
-                //sharedPreferences.edit().putString("pref_key_telemetry_velocity", Double.toString(speed.getGroundSpeed())).apply();
                 mModel.getVelocity().setValue(Double.toString(speed.getGroundSpeed()));
 
             default:

@@ -2,17 +2,9 @@ package com.dronepath;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
-import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
-import android.preference.PreferenceScreen;
-import android.widget.BaseAdapter;
 import android.widget.Toast;
 
-/**
- * Created by Dylan on 11/12/2017.
- */
 
 public class SettingsFragment extends PreferenceFragment
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -28,8 +20,22 @@ public class SettingsFragment extends PreferenceFragment
 
         toast = Toast.makeText(getContext(), "", Toast.LENGTH_LONG);
 
-        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        //getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+
+    }
+
+    @Override
+    public void onPause() {
+        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
+
 
     // Listener for when any Setting is changed
     @Override
@@ -54,20 +60,6 @@ public class SettingsFragment extends PreferenceFragment
             }
         }
 
-        else if(key.equals("pref_key_telemetry_latitude")
-                || key.equals("pref_key_telemetry_longitude")
-                || key.equals("pref_key_telemetry_altitude")
-                || key.equals("pref_key_telemetry_velocity")) {
-            Preference pref = (Preference) findPreference(key);
-            EditTextPreference editTextPreference = (EditTextPreference) pref;
-            pref.setSummary(editTextPreference.getText());
-            
-//            PreferenceScreen prefScr = (PreferenceScreen) findPreference("pref_key_telemetry_button");
-//            if (prefScr != null)
-//                ((BaseAdapter) prefScr.getRootAdapter()).notifyDataSetChanged();
-        }
-
-
         // Maintain a safe minimum altitude setting
         if (key.equals("pref_key_min_altitude")) {
             if (minAltitude < 10.0) {
@@ -83,18 +75,5 @@ public class SettingsFragment extends PreferenceFragment
     public void alertUser(String message) {
         toast.setText(message);
         toast.show();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
-
-    }
-
-    @Override
-    public void onPause() {
-        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-        super.onPause();
     }
 }

@@ -40,6 +40,8 @@
     <string name="telemetry_title_longitude">Current Longitude</string>
     <string name="telemetry_title_velocity">Reported Velocity</string>
     <string name="telemetry_title_altitude">Reported Altitude</string>
+    <string name="telemetry_title_vehicle_mode">Current Vehicle Mode</string>
+    <string name="telemetry_title_battery">Current Battery Percentage</string>
     <string name="telemetry_none">Nothing reported from drone</string>
 
 </resources>

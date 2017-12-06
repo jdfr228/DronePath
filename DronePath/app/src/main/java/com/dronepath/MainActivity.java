@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity
                     View.OnClickListener, ConnectionTimeoutFragment.OnCompleteListener {
 
     // Global variables - if another Activity needs to change them, pass them back to the Main Activity
-    private static double velocity = 1.0, altitude;
+    private static double velocity = 5.0, altitude;
     private static String savedLatitude = "";
     private static String savedLongitude = "";
     private static boolean savedCheckBox = false;

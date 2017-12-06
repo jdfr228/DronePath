@@ -64,6 +64,34 @@
             android:id="@+id/telemetry_altitude"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/telemetry_none" />
+
+        <TextView
+            android:id="@+id/telemetry_title_vehicle_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/telemetry_title_vehicle_mode"
+            android:textAppearance="@android:style/TextAppearance.Material.Title" />
+
+        <TextView
+            android:id="@+id/telemetry_vehicle_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/telemetry_none" />
+
+        <TextView
+            android:id="@+id/telemetry_title_battery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/telemetry_title_battery"
+            android:textAppearance="@android:style/TextAppearance.Material.Title" />
+
+        <TextView
+            android:id="@+id/telemetry_battery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="@string/telemetry_none" />
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>
