@@ -5,6 +5,7 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+    <string name="action_telemetry">Telemetry</string>
 
     <string name="communicate">Communicate</string>
 
@@ -34,5 +35,11 @@
     <string name="pref_title_telemetry_longitude">Current Longitude</string>
     <string name="pref_title_telemetry_velocity">Reported Velocity</string>
     <string name="pref_title_telemetry_altitude">Reported Altitude</string>
+
+    <string name="telemetry_title_latitude">Current Latitude</string>
+    <string name="telemetry_title_longitude">Current Longitude</string>
+    <string name="telemetry_title_velocity">Reported Velocity</string>
+    <string name="telemetry_title_altitude">Reported Altitude</string>
+    <string name="telemetry_none">Nothing reported from drone</string>
 
 </resources>

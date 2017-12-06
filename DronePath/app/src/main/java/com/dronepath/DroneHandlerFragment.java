@@ -1,11 +1,11 @@
 package com.dronepath;
 
 import android.app.Activity;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -34,8 +34,6 @@ import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
-import org.w3c.dom.Attr;
-
 import java.util.List;
 
 
@@ -61,7 +59,7 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
 
     // Drone data
     private SharedPreferences sharedPreferences;
-
+    private static TelemetryViewModel mModel;
 
     // Fragment Lifecycle methods (in the order they would be called)
     // Called each time a new MainActivity is created (such as on screen rotation)
@@ -99,6 +97,21 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
         controlTowerConnect();
         missionControl = new MissionControl(activity, drone);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+
+        mModel = ViewModelProviders.of(this).get(TelemetryViewModel.class);
+    }
+
+    //@Override
+    //public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        //view = inflater.inflate(R.layout.activity_telemetry, container, false);
+        //return view;
+    //}
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //latitudeTextView = (TextView) view.findViewById(R.id.telemetry_latitude);
+        //latitudeTextView.setText("Testing");
     }
 
     // Should only be called when the app is killed since setRetainInstance is set to true
@@ -126,6 +139,10 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
     // Getter methods
     public int getDroneState() {
         return droneState;
+    }
+
+    public static TelemetryViewModel getModel() {
+        return mModel;
     }
 
     public boolean isDroneConnected() {
@@ -432,8 +449,10 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
                 Gps location = drone.getAttribute(AttributeType.GPS);
 
                 // Send GPS location of drone to the telemetry data screen
-                sharedPreferences.edit().putString("pref_key_telemetry_latitude", Double.toString(location.getPosition().getLatitude())).apply();
-                sharedPreferences.edit().putString("pref_key_telemetry_longitude", Double.toString(location.getPosition().getLongitude())).apply();
+                //sharedPreferences.edit().putString("pref_key_telemetry_latitude", Double.toString(location.getPosition().getLatitude())).apply();
+                //sharedPreferences.edit().putString("pref_key_telemetry_longitude", Double.toString(location.getPosition().getLongitude())).apply();
+                mModel.getLatitude().setValue(Double.toString(location.getPosition().getLatitude()));
+                mModel.getLongitude().setValue(Double.toString(location.getPosition().getLongitude()));
 
                 // Send drone location to map
                 activity.mapFragment.onDroneGPSUpdated(location.getPosition());
@@ -459,13 +478,15 @@ public class DroneHandlerFragment extends Fragment implements DroneListener, Tow
             case AttributeEvent.ALTITUDE_UPDATED:
                 // Send altitude of drone to the telemetry data screen
                 Altitude altitude = this.drone.getAttribute(AttributeType.ALTITUDE);
-                sharedPreferences.edit().putString("pref_key_telemetry_altitude", Double.toString(altitude.getAltitude())).apply();
+                //sharedPreferences.edit().putString("pref_key_telemetry_altitude", Double.toString(altitude.getAltitude())).apply();
+                mModel.getAltitude().setValue(Double.toString(altitude.getAltitude()));
                 break;
 
             case AttributeEvent.SPEED_UPDATED:
                 // Send velocity of drone to the telemetry data screen
                 Speed speed = this.drone.getAttribute(AttributeType.SPEED);
-                sharedPreferences.edit().putString("pref_key_telemetry_velocity", Double.toString(speed.getGroundSpeed())).apply();
+                //sharedPreferences.edit().putString("pref_key_telemetry_velocity", Double.toString(speed.getGroundSpeed())).apply();
+                mModel.getVelocity().setValue(Double.toString(speed.getGroundSpeed()));
 
             default:
                 break;

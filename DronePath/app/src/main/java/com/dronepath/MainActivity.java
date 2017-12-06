@@ -316,6 +316,10 @@ public class MainActivity extends AppCompatActivity
             // Switch to the settings screen Activity
             startActivity(intent);
         }
+        else if (id == R.id.action_telemetry) {
+            Intent intent = new Intent(this, TelemetryActivity.class);
+            startActivity(intent);
+        }
 
         return super.onOptionsItemSelected(item);
     }
