@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group>
+        <item
+            android:id="@+id/nav_gps"
+            android:checkable="false"
+            android:icon="@android:drawable/ic_menu_mylocation"
+            android:title="@string/gps_address" />
+        <item
+            android:id="@+id/nav_flight_vars"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="@string/flight_vars" />
+        <item
+            android:id="@+id/nav_disconnect"
+            android:icon="@mipmap/ic_action_signal_wifi_off"
+            android:title="@string/disconnect" />
+    </group>
+
+</menu>

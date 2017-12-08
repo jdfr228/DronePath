@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <PreferenceCategory
+        android:title="@string/pref_title_variable_parameters"
+        android:key="pref_key_flight_parameters">
+
+        <EditTextPreference
+            android:key="pref_key_max_velocity"
+            android:title="@string/pref_title_velocity_max"
+            android:inputType="numberDecimal"
+            android:defaultValue="10.0" />
+        <EditTextPreference
+            android:key="pref_key_min_altitude"
+            android:title="@string/pref_title_altitude_min"
+            android:inputType="numberDecimal"
+            android:defaultValue="10.0" />
+        <EditTextPreference
+            android:key="pref_key_max_altitude"
+            android:title="@string/pref_title_altitude_max"
+            android:inputType="numberDecimal"
+            android:defaultValue="50.0" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_connection_parameters"
+        android:key="pref_key_drone_connection_parameters">
+
+        <EditTextPreference
+            android:key="pref_key_timeout_length"
+            android:title="@string/pref_title_timeout_length"
+            android:inputType="number"
+            android:defaultValue="15" />
+        <EditTextPreference
+            android:key="pref_key_drone_port"
+            android:title="@string/pref_title_drone_port"
+            android:inputType="number"
+            android:defaultValue="14550" />
+
+    </PreferenceCategory>
+</PreferenceScreen>

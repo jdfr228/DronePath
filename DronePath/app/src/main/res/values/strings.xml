@@ -1,0 +1,47 @@
+<resources>
+    <string name="app_name">DronePath</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="action_telemetry">Telemetry</string>
+
+    <string name="communicate">Communicate</string>
+
+    <string name="gps_address">GPS Address</string>
+    <string name="longitude">Longitude</string>
+    <string name="latitude">Latitude</string>
+    <string name="addAsWaypoint">Add as a waypoint</string>
+
+    <string name="flight_vars">Flight Variables</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="start">Start Flight</string>
+
+    <string name="velocity">Velocity</string>
+    <string name="altitude">Altitude</string>
+
+    <string name="pref_title_variable_parameters">Variable Parameters</string>
+    <string name="pref_title_connection_parameters">Connection Parameters</string>
+    <string name="pref_title_velocity_max">Maximum Velocity (m/s)</string>
+    <string name="pref_title_altitude_min">Minimum Altitude (Meters)</string>
+    <string name="pref_title_altitude_max">Maximum Altitude (Meters)</string>
+    <string name="pref_title_timeout_length">Seconds For Drone Connection Timeout</string>
+    <string name="pref_title_drone_port">Drone Connection UDP Port</string>
+
+    <string name="pref_title_telemetry">Telemetry</string>
+    <string name="pref_title_telemetry_button">View Telemetry Data</string>
+    <string name="pref_title_telemetry_latitude">Current Latitude</string>
+    <string name="pref_title_telemetry_longitude">Current Longitude</string>
+    <string name="pref_title_telemetry_velocity">Reported Velocity</string>
+    <string name="pref_title_telemetry_altitude">Reported Altitude</string>
+
+    <string name="telemetry_title_latitude">Current Latitude</string>
+    <string name="telemetry_title_longitude">Current Longitude</string>
+    <string name="telemetry_title_velocity">Reported Velocity</string>
+    <string name="telemetry_title_altitude">Reported Altitude</string>
+    <string name="telemetry_title_vehicle_mode">Current Vehicle Mode</string>
+    <string name="telemetry_title_battery">Current Battery Percentage</string>
+    <string name="telemetry_none">Nothing reported from drone</string>
+
+</resources>
