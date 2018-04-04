@@ -4,5 +4,7 @@ This is an Android application that allows you to dynamically create a flight pa
 
 Built with Android plugin v. 3.0.0 & Gradle 4.1 targetting Android 6.0 and above.
 
+Pre-compiled APK available under Releases.
+
 Utilizes the DroneKit API and MavLink connection protocol.
 Some icons were taken from https://material.io/icons/
