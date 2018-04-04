@@ -42,14 +42,9 @@
                 android:value=".MainActivity" />
         </activity>
 
-        <!--
-             The API key for Google Maps-based APIs.
-             Needs to be removed.
-        -->
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDsHhPCz-qc0kfnx3Gz_FFtDMxT2TtrHgE"/>
+            android:value="AIzaSyAy-or-iOH5spgUiRpDV7lElvITi1fvUBg"/>
     </application>
 
     <uses-feature
