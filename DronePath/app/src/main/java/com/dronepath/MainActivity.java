@@ -472,7 +472,7 @@ public class MainActivity extends AppCompatActivity
             case DRONE_ARMED:   // Show cancel/return icon
                 Log.d("connectButton", "Drone icon updated to return/cancel icon");
                 loadingIndicator.setVisibility(View.INVISIBLE);
-                connect_arm_fab.setImageResource(R.drawable.cast_ic_notification_disconnect);
+                connect_arm_fab.setImageResource(R.drawable.quantum_ic_clear_white_24);
                 connect_arm_fab.setBackgroundTintList(ColorStateList.valueOf
                         (ContextCompat.getColor(this, android.R.color.holo_red_dark)));
                 connect_arm_fab.setClickable(true);
