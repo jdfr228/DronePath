@@ -3,8 +3,10 @@ package com.dronepath;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 
-class TelemetryViewModel extends ViewModel {
+public class TelemetryViewModel extends ViewModel {
     private MutableLiveData<String> latitude, longitude, velocity, altitude, vehicleMode, battery;
+
+    public TelemetryViewModel() {}
 
     // Getters for LiveData
     MutableLiveData<String> getLatitude() {
